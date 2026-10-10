@@ -4,7 +4,7 @@
  *   query ──▶ radio-browser ──▶ Station[] ──▶ list + map markers
  *                                                │  select
  *                                                ▼
- *   selectedStation ──▶ AudioController ──▶ PlaybackState ──▶ transport deck
+ *   selectedStation ──▶ AudioController ──▶ PlaybackState ──▶ deck
  *                          ▲  play/pause/stop/volume (user actions)
  *                          └── error ──▶ retry via play again
  *
@@ -15,14 +15,16 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createAudioController } from '@/audio/audio-controller';
+import Deck from '@/components/deck/Deck';
 import { ErrorBoundary } from '@/components/error-boundary';
 import StationMap from '@/components/StationMap';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { searchStations } from '@/stations/radio-browser';
+import { stationLocationLabel } from '@/stations/station-meta';
 import type Station from '@/stations/types';
-import { ArrowDownRight, ArrowRight, AudioLines, Globe2, Pause, Play, Radio, Search, Signal, Square, Volume2, Waves } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, AudioLines, Radio, Search, Signal, Waves } from 'lucide-react';
 import {
   Route,
   Switch,
@@ -96,20 +98,6 @@ function Home() {
     if (!selectedStation) return;
     if (isTuning) controller.pause();
     else void controller.play(selectedStation);
-  }
-
-  function playbackLabel() {
-    switch (playback.status) {
-      case 'loading': return `TUNING · ${playback.station.name || 'UNTITLED STATION'}`;
-      case 'playing': return `ON AIR · ${playback.station.name || 'UNTITLED STATION'}`;
-      case 'paused': return `PAUSED · ${playback.station.name || 'UNTITLED STATION'}`;
-      case 'error': return 'SIGNAL LOST';
-      default: return 'STANDBY';
-    }
-  }
-
-  function locationLabel(station: Station) {
-    return [station.country, station.countryCode?.toUpperCase()].filter(Boolean).join(' · ') || 'Location not listed';
   }
 
   return (
@@ -220,7 +208,7 @@ function Home() {
                       <span className="station-index">{String(index + 1).padStart(2, '0')}</span>
                       <span className="station-info">
                         <span className="station-name-line"><span className="station-name" data-testid={`text-station-name-${station.id}`}>{station.name || 'Untitled station'}</span></span>
-                        <span className="station-country">{locationLabel(station)}</span>
+                        <span className="station-country">{stationLocationLabel(station)}</span>
                         <span className="station-meta">
                           {station.genres.slice(0, 3).map((genre) => <span className="genre-tag" key={genre}>{genre}</span>)}
                           {stream?.codec && <span>{stream.codec.toUpperCase()}{stream.bitrate ? ` · ${stream.bitrate} KBPS` : ''}</span>}
@@ -237,64 +225,14 @@ function Home() {
           <aside className="side-column" aria-label="Tuned station">
             <div className="side-card">
               <div className="side-heading"><span>04 — Current tuning</span><span className={`selected-state${selectedStation ? ' active' : ''}`} data-testid="status-station-selection">{selectedStation ? 'LOCKED' : 'STANDBY'}</span></div>
-              {selectedStation ? (
-                <div data-testid="panel-selected-station">
-                  <h3 className="selected-name" data-testid="text-selected-station-name">{selectedStation.name || 'Untitled station'}</h3>
-                  <p className="selected-location"><Globe2 size={13} aria-hidden="true" />{locationLabel(selectedStation)}</p>
-                  <div className="selected-detail"><span>GENRE</span><strong>{selectedStation.genres[0] || 'Unclassified'}</strong></div>
-                  <div className="selected-detail" style={{ marginTop: 9, paddingTop: 10 }}><span>STREAMS</span><strong>{selectedStation.streams.length} AVAILABLE</strong></div>
-                </div>
-              ) : (
-                <div className="selection-empty" data-testid="state-no-station-selected">
-                  <svg className="empty-signal" viewBox="0 0 68 34" fill="none" aria-hidden="true"><path d="M2 18h13l6-12 8 24 8-19 6 13 5-6h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  <p>Select a station from your results to lock it into the receiver.</p>
-                </div>
-              )}
-              <div className="transport" data-testid="deck-transport">
-                <div className="transport-status">
-                  <span className={`transport-led${isTuning ? ' live' : ''}`} aria-hidden="true" />
-                  <span data-testid="text-playback-status">{playbackLabel()}</span>
-                </div>
-                <div className="transport-controls">
-                  <button
-                    type="button"
-                    className="transport-button"
-                    onClick={togglePlayback}
-                    disabled={!selectedStation}
-                    aria-label={isTuning ? 'Pause station' : 'Play station'}
-                    aria-pressed={isTuning}
-                    data-testid="button-play-station"
-                  >
-                    {isTuning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-                  </button>
-                  <button
-                    type="button"
-                    className="transport-button"
-                    onClick={() => controller.stop()}
-                    disabled={playback.status === 'idle'}
-                    aria-label="Stop station"
-                    data-testid="button-stop-station"
-                  >
-                    <Square aria-hidden="true" />
-                  </button>
-                  <label className="transport-volume">
-                    <Volume2 aria-hidden="true" />
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={volume}
-                      onChange={(event) => setVolume(Number(event.target.value))}
-                      aria-label="Playback volume"
-                      data-testid="input-volume"
-                    />
-                  </label>
-                </div>
-                {playback.status === 'error' && (
-                  <p className="transport-error" role="alert" data-testid="text-playback-error">{playback.message}</p>
-                )}
-              </div>
+              <Deck
+                station={selectedStation}
+                playback={playback}
+                volume={volume}
+                onTogglePlayback={togglePlayback}
+                onStop={() => controller.stop()}
+                onVolumeChange={setVolume}
+              />
             </div>
             <div className="side-card">
               <div className="side-heading"><span>Signal notes</span><span>RX / 01</span></div>
