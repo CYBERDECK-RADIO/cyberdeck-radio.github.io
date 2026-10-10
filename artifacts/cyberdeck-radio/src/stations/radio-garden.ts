@@ -6,12 +6,18 @@
  * bakes the result into `public/radio-garden.json` (see
  * `scripts/src/scrape-radio-garden.ts`):
  *
- *   public/radio-garden.json ──▶ fetchGardenStations ──▶ Station[]
+ *   public/radio-garden.json(,gz) ──▶ fetchGardenStations ──▶ Station[]
  *   stations + query          ──▶ filterGardenStations ──▶ Station[] (client-side)
  *
  * Each station carries a resolved direct stream URL when the crawler could
  * follow Radio Garden's `channel.mp3` redirect, plus the `channel.mp3` listen
  * URL as an HTTPS fallback. Records are geotagged, so they pin the atlas.
+ *
+ * The raw catalog is ~10 MB, so the deploy workflow also publishes
+ * `public/radio-garden.json.gz`. The adapter fetches the gzipped copy and
+ * decompresses it in-browser (`DecompressionStream`), transparently falling
+ * back to the plain JSON file when the gzip copy is missing, unreadable, or
+ * `DecompressionStream` is unavailable.
  *
  * If the catalog has not been generated yet (e.g. local dev), the missing file
  * is treated as an empty catalog rather than an error.
@@ -20,6 +26,7 @@
 import type Station from "./types";
 
 const DATA_URL = `${import.meta.env.BASE_URL}radio-garden.json`;
+const GZIP_DATA_URL = `${DATA_URL}.gz`;
 const BROWSE_LIMIT = 200;
 const SEARCH_LIMIT = 250;
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -75,37 +82,18 @@ async function requestStations(signal?: AbortSignal): Promise<Station[]> {
   signal?.addEventListener("abort", forwardAbort, { once: true });
 
   try {
-    let response: Response;
-    try {
-      response = await fetch(DATA_URL, {
-        headers: { Accept: "application/json" },
-        signal: requestController.signal,
-      });
-    } catch {
-      if (requestController.signal.aborted) {
-        throw new DOMException("Search was cancelled", "AbortError");
-      }
-      throw new Error(
-        "The Radio Garden catalog could not be reached. Check your connection and try again.",
-      );
-    }
-
-    if (response.status === 404) return [];
-
-    if (!response.ok) {
-      throw new Error(
-        "The Radio Garden catalog is temporarily unavailable. Try again shortly.",
-      );
-    }
-
     let payload: unknown;
     try {
-      payload = await response.json();
-    } catch {
-      throw new Error(
-        "The Radio Garden catalog is unreadable. Try again shortly.",
-      );
+      payload = await fetchCatalogPayload(GZIP_DATA_URL, requestController.signal);
+      if (payload === null) {
+        payload = await fetchCatalogPayload(DATA_URL, requestController.signal);
+      }
+    } catch (error) {
+      if (!(error instanceof CatalogFallbackError)) throw error;
+      payload = await fetchCatalogPayload(DATA_URL, requestController.signal);
     }
+
+    if (payload === null) return [];
 
     const records = isObject(payload) ? payload.stations : undefined;
     if (!Array.isArray(records)) {
@@ -126,6 +114,95 @@ async function requestStations(signal?: AbortSignal): Promise<Station[]> {
   } finally {
     clearTimeout(timeoutId);
     signal?.removeEventListener("abort", forwardAbort);
+  }
+}
+
+/**
+ * Marks a gzip-copy fetch that should retry against the plain JSON catalog
+ * (missing file, network failure, or an undecodable gzip stream). Carries the
+ * same reachability copy we surface for the plain-JSON path.
+ */
+class CatalogFallbackError extends Error {
+  constructor() {
+    super(
+      "The Radio Garden catalog could not be reached. Check your connection and try again.",
+    );
+    this.name = "CatalogFallbackError";
+  }
+}
+
+async function fetchCatalogPayload(
+  url: string,
+  signal: AbortSignal,
+): Promise<unknown | null> {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { Accept: "application/json, application/gzip" },
+      signal,
+    });
+  } catch {
+    if (signal.aborted) {
+      throw new DOMException("Search was cancelled", "AbortError");
+    }
+    throw new CatalogFallbackError();
+  }
+
+  if (response.status === 404) return null;
+
+  if (!response.ok) {
+    throw new Error(
+      "The Radio Garden catalog is temporarily unavailable. Try again shortly.",
+    );
+  }
+
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(await response.arrayBuffer());
+  } catch {
+    throw new Error(
+      "The Radio Garden catalog is unreadable. Try again shortly.",
+    );
+  }
+
+  return parseCatalogBytes(bytes);
+}
+
+function isGzip(bytes: Uint8Array): boolean {
+  return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+}
+
+async function parseCatalogBytes(bytes: Uint8Array): Promise<unknown> {
+  if (isGzip(bytes)) {
+    if (typeof DecompressionStream === "undefined") {
+      throw new CatalogFallbackError();
+    }
+    let text: string;
+    try {
+      const payload = bytes.buffer.slice(
+        bytes.byteOffset,
+        bytes.byteOffset + bytes.byteLength,
+      ) as ArrayBuffer;
+      const decompressed = new Blob([payload])
+        .stream()
+        .pipeThrough(new DecompressionStream("gzip"));
+      text = await new Response(decompressed).text();
+    } catch {
+      throw new CatalogFallbackError();
+    }
+    return parseJson(text);
+  }
+
+  return parseJson(new TextDecoder().decode(bytes));
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      "The Radio Garden catalog is unreadable. Try again shortly.",
+    );
   }
 }
 

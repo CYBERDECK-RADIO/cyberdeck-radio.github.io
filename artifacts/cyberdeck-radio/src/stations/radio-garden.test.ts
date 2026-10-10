@@ -13,6 +13,13 @@ const makeResponse = (body: unknown, init?: ResponseInit): Response =>
     ...init,
   });
 
+async function gzipEncode(text: string): Promise<Uint8Array> {
+  const compressed = new Blob([new TextEncoder().encode(text)])
+    .stream()
+    .pipeThrough(new CompressionStream("gzip"));
+  return new Uint8Array(await new Response(compressed).arrayBuffer());
+}
+
 const catalog = {
   generatedAt: "2026-01-01T00:00:00.000Z",
   source: "radio.garden",
@@ -170,6 +177,56 @@ describe("Radio Garden source", () => {
     );
 
     await expect(fetchGardenStations()).resolves.toEqual([]);
+  });
+
+  it("fetches and decompresses the gzipped catalog with a single request", async () => {
+    const compressed = await gzipEncode(JSON.stringify(catalog));
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(compressed, {
+          status: 200,
+          headers: { "Content-Type": "application/gzip" },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const stations = await fetchGardenStations();
+
+    expect(stations).toHaveLength(2);
+    expect(stations[0].name).toBe("Jazz Con Class Radio");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("radio-garden.json.gz");
+  });
+
+  it("falls back to the plain JSON catalog when the gzip copy is absent", async () => {
+    const fetchMock = vi.fn((url: string | URL) =>
+      String(url).endsWith(".gz")
+        ? Promise.resolve(new Response("missing", { status: 404 }))
+        : Promise.resolve(makeResponse(catalog)),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const stations = await fetchGardenStations();
+
+    expect(stations).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain("radio-garden.json");
+  });
+
+  it("falls back to plain JSON when the gzip copy is undecodable", async () => {
+    const badGzip = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03]);
+    const fetchMock = vi.fn((url: string | URL) =>
+      String(url).endsWith(".gz")
+        ? Promise.resolve(new Response(badGzip, { status: 200, headers: { "Content-Type": "application/gzip" } }))
+        : Promise.resolve(makeResponse(catalog)),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const stations = await fetchGardenStations();
+
+    expect(stations).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("surfaces provider failures", async () => {

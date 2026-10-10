@@ -13,7 +13,8 @@
 # Radio Garden's API is CORS-locked, so its directory is scraped here (Node, with
 # a browser User-Agent to pass Cloudflare) and baked into public/ before the
 # build. The result is cached per-day so ordinary pushes skip the crawl and only
-# the scheduled run pays for it.
+# the scheduled run pays for it. The ~10 MB catalog is also gzipped so the app
+# transports ~1 MB over the wire (the adapter decompresses it in-browser).
 
 name: Deploy to GitHub Pages
 
@@ -75,6 +76,10 @@ jobs:
         if: steps.radio-garden-cache.outputs.cache-hit != 'true'
         continue-on-error: true
         run: pnpm --filter @workspace/scripts run scrape:radio-garden
+
+      - name: Compress Radio Garden catalog
+        run: gzip -k -9 -f artifacts/cyberdeck-radio/public/radio-garden.json
+        continue-on-error: true
 
       - name: Build
         run: pnpm --filter @workspace/cyberdeck-radio build
