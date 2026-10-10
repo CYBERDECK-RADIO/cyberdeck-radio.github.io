@@ -239,6 +239,8 @@
 @keyframes shimmer { 0%,100% { opacity:.48; } 50% { opacity:.9; } }
 .footer-line { display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(226,220,205,.1); padding:15px 0 24px; color:#656e70; font:9px var(--app-font-mono); text-transform:uppercase; letter-spacing:.12em; }
 .footer-line span:last-child { color:#7d827c; }
+.footer-line a { color:#9aa1a0; text-decoration:none; border-bottom:1px solid rgba(154,161,160,.35); }
+.footer-line a:hover { color:#d5b466; border-bottom-color:rgba(213,180,102,.5); }
 @media (max-width:760px) {
   .radio-wrap { width:min(100% - 34px, 560px); }
   .topline { padding:20px 0; }

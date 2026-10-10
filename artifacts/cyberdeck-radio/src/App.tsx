@@ -241,7 +241,11 @@ function Home() {
           </aside>
         </section>
 
-        <footer className="footer-line"><span>CYBERDECK RADIO · FIELD RECEIVER 001</span><span>LISTEN BEYOND THE STATIC</span></footer>
+        <footer className="footer-line">
+          <span>CYBERDECK RADIO · FIELD RECEIVER 001</span>
+          <span>STATIONS VIA <a href="https://www.radio-browser.info/" target="_blank" rel="noreferrer noopener">RADIO-BROWSER.INFO</a></span>
+          <span>LISTEN BEYOND THE STATIC</span>
+        </footer>
       </div>
     </main>
   );
