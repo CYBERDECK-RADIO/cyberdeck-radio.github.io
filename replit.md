@@ -26,22 +26,27 @@ A static radio-discovery app for finding real stations worldwide, with a retro r
 ## Where things live
 
 - `artifacts/cyberdeck-radio/src/App.tsx` — station search, search states, and selected-station UI
+- `artifacts/cyberdeck-radio/src/components/StationMap.tsx` — interactive world map, station markers, and focus behavior
 - `artifacts/cyberdeck-radio/src/stations/types.ts` — app-owned station data contract
 - `artifacts/cyberdeck-radio/src/stations/radio-browser.ts` — Radio Browser API adapter and response normalization
+- `artifacts/cyberdeck-radio/src/map/nearest-station.ts` — geographic nearest-station selection
+- `artifacts/cyberdeck-radio/src/map/world-data.ts` — bundled Natural Earth country boundaries
 - `artifacts/cyberdeck-radio/src/index.css` — app theme and responsive layout
 - `artifacts/cyberdeck-radio/src/stations/radio-browser.test.ts` — adapter tests
+- `artifacts/cyberdeck-radio/src/map/nearest-station.test.ts` — nearest-station tests
 
 ## Architecture decisions
 
 - CyberDeck Radio is a static, browser-only app; its current station search calls the public Radio Browser API directly.
 - Keep provider JSON behind the station adapter; UI code consumes only the app-owned `Station` type.
-- Search is list-first; map and audio playback are separate future vertical slices, not prerequisites for station selection.
+- MapLibre renders bundled Natural Earth boundaries, avoiding external tile requests and API-key requirements.
+- The map selects the station closest to its center after search results load or map movement settles; focus changes do not start playback.
 - Do not proxy or downgrade stream URLs. Playback work must preserve HTTPS-first behavior and continue direct audio if Web Audio processing is blocked.
 - Do not add a backend, database, account system, AI model, or scheduled crawler unless a later product decision requires it.
 
 ## Product
 
-Listeners can search the live station directory by name, place, or genre and select a station to inspect its available metadata. The current slice does not yet play audio or show the geographic map.
+Listeners can search the live station directory by station name, country, or genre, explore station coordinates on a pannable and zoomable world map, and select a station to inspect its metadata. The current slice does not yet play audio.
 
 ## User preferences
 
@@ -50,6 +55,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Gotchas
 
 - Radio Browser records can omit country, genres, coordinates, bitrate, or resolved stream URLs; treat those fields as optional.
+- Stations without valid coordinates remain searchable but cannot appear on the map or be selected as the map-center nearest station.
 - A directory result is not a guarantee that a stream is currently reachable. Keep provider errors distinct from a successful search with no results.
 - The app's Vite workflow supplies `PORT` and `BASE_PATH`; do not start the artifact with a manually configured duplicate workflow.
 

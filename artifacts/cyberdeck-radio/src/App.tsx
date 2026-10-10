@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
+import StationMap from '@/components/StationMap';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -32,6 +33,7 @@ function Home() {
     const requestId = ++latestRequest.current;
     setStatus('loading');
     setStations([]);
+    setSelectedStation(null);
     setErrorMessage('');
     searchStations({ query: submittedQuery, signal: controller.signal })
       .then((results) => {
@@ -57,6 +59,11 @@ function Home() {
 
   function retrySearch() {
     setAttempt((value) => value + 1);
+  }
+
+  function handleSelectStation(stationId: string) {
+    const station = stations.find((item) => item.id === stationId);
+    if (station) setSelectedStation(station);
   }
 
   function locationLabel(station: Station) {
@@ -111,11 +118,19 @@ function Home() {
           </form>
         </section>
 
+        <div className="map-panel">
+          <StationMap
+            stations={stations}
+            selectedStationId={selectedStation?.id ?? null}
+            onSelectStation={handleSelectStation}
+          />
+        </div>
+
         <section className="workspace" aria-label="Station directory">
           <div className="results-column">
             <div className="results-head">
               <div>
-                <div className="section-kicker">02 — The directory</div>
+                <div className="section-kicker">03 — The directory</div>
                 <h2>{status === 'success' ? `Signals for “${submittedQuery}”` : 'Find your frequency'}</h2>
               </div>
               {status === 'success' && <span className="result-count" data-testid="text-result-count">{stations.length} {stations.length === 1 ? 'SIGNAL' : 'SIGNALS'}</span>}
@@ -124,7 +139,7 @@ function Home() {
               <div className="state-panel" data-testid="state-search-idle">
                 <div className="state-glyph"><Signal aria-hidden="true" /></div>
                 <h3>The dial is yours.</h3>
-                <p>Enter a place, a station name, or a sound above. We’ll find the real broadcasts reaching out from there.</p>
+                <p>Enter a station name, country, or genre above to find the real broadcasts reaching out from there.</p>
               </div>
             )}
             {status === 'loading' && (
@@ -136,7 +151,7 @@ function Home() {
               <div className="state-panel" data-testid="state-search-empty">
                 <div className="state-glyph"><AudioLines aria-hidden="true" /></div>
                 <h3>No signal found there.</h3>
-                <p>No stations matched “{submittedQuery}”. Try a different spelling, a nearby city, or a broader genre.</p>
+                <p>No stations matched “{submittedQuery}”. Try a different spelling, country, or broader genre.</p>
               </div>
             )}
             {status === 'error' && (
@@ -156,7 +171,7 @@ function Home() {
                     <button
                       key={station.id}
                       className={`station-row${isSelected ? ' is-selected' : ''}`}
-                      onClick={() => setSelectedStation(station)}
+                      onClick={() => handleSelectStation(station.id)}
                       aria-pressed={isSelected}
                       data-testid={`button-select-station-${station.id}`}
                     >
@@ -179,7 +194,7 @@ function Home() {
 
           <aside className="side-column" aria-label="Tuned station">
             <div className="side-card">
-              <div className="side-heading"><span>03 — Current tuning</span><span className={`selected-state${selectedStation ? ' active' : ''}`} data-testid="status-station-selection">{selectedStation ? 'LOCKED' : 'STANDBY'}</span></div>
+              <div className="side-heading"><span>04 — Current tuning</span><span className={`selected-state${selectedStation ? ' active' : ''}`} data-testid="status-station-selection">{selectedStation ? 'LOCKED' : 'STANDBY'}</span></div>
               {selectedStation ? (
                 <div data-testid="panel-selected-station">
                   <h3 className="selected-name" data-testid="text-selected-station-name">{selectedStation.name || 'Untitled station'}</h3>

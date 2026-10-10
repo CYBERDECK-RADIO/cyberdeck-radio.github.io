@@ -48,6 +48,8 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
     "@vitejs/plugin-react": "catalog:",
     "@workspace/api-client-react": "workspace:*",
     "class-variance-authority": "catalog:",
@@ -75,5 +77,10 @@
     "vitest": "^5.0.3",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "maplibre-gl": "^6.13.0",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
   }
 }

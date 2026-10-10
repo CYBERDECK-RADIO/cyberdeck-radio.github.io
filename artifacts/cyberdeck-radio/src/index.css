@@ -161,6 +161,7 @@
 .search-button svg { width:15px; height:15px; }
 .search-hint { display:flex; align-items:center; justify-content:space-between; color:#6f7778; font:10px var(--app-font-mono); margin-top:12px; letter-spacing:.035em; }
 .search-hint strong { color:#a3a49b; font-weight:400; }
+.map-panel { padding-top:40px; }
 .workspace { display:grid; grid-template-columns:minmax(0,1fr) 286px; gap:24px; padding:40px 0 72px; align-items:start; }
 .results-head { display:flex; justify-content:space-between; align-items:end; border-bottom:1px solid rgba(226,220,205,.12); padding-bottom:13px; margin-bottom:9px; }
 .section-kicker { color:#777f80; font:9px var(--app-font-mono); letter-spacing:.18em; text-transform:uppercase; margin-bottom:6px; }
@@ -221,6 +222,7 @@
   .hero h1 { font-size:clamp(50px,14vw,74px); }
   .dial-module { display:none; }
   .workspace { grid-template-columns:1fr; gap:20px; padding:30px 0 48px; }
+  .map-panel { padding-top:30px; }
   .station-row { grid-template-columns:39px minmax(0,1fr) 22px; gap:11px; padding:15px 6px; }
   .station-name-line { display:block; }
   .station-country { display:block; margin-top:3px; }
