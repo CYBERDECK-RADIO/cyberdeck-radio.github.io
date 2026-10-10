@@ -1,3 +1,12 @@
+/**
+ * App entry point: mounts the React tree under a top-level error boundary.
+ *
+ *   #root ──▶ createRoot ──▶ ErrorBoundary ──▶ App
+ *
+ * onCaughtError keeps caught errors off reportError() so the dev overlay does
+ * not fire for handled failures.
+ */
+
 import { createRoot } from 'react-dom/client';
 
 import App from './App';

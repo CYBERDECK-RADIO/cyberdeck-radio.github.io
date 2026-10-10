@@ -1,3 +1,13 @@
+/**
+ * Station provider: searches radio-browser.info and normalizes its records.
+ *
+ *   query ──▶ 3 parallel category fetches (name / tag / country)
+ *          ──▶ normalizeStations ──▶ Station[] (deduped, capped)
+ *
+ * Provider JSON is confined here; callers only see Station[]. Timeouts, aborts,
+ * and HTTP failures surface as distinct Error messages.
+ */
+
 import type Station from "./types";
 
 const API_ORIGIN = "https://de1.api.radio-browser.info";

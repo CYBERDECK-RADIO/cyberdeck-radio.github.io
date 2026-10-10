@@ -1,3 +1,15 @@
+/**
+ * MapLibre world map: renders country outlines and station markers, and keeps
+ * selection synchronized with the list.
+ *
+ *   stations + selectedId ──▶ GeoJSON source ──▶ circle layer
+ *   marker click ──▶ onSelectStation(id)
+ *   selectedId change ──▶ fly to marker
+ *   no WebGL / init failure ──▶ StationMapFallback
+ *
+ * Map lifecycle and marker bookkeeping stay inside this module.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AttributionControl,

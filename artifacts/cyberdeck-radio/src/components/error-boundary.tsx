@@ -1,3 +1,12 @@
+/**
+ * Catches render errors in a subtree and shows a recoverable fallback.
+ *
+ *   child render throws ──▶ getDerivedStateFromError ──▶ fallback(error, reset)
+ *   resetKey changes ──▶ componentDidUpdate ──▶ clears the error
+ *
+ * The rest of the app keeps running; only the wrapped subtree is replaced.
+ */
+
 import {
   Component,
   type ComponentType,
