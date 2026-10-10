@@ -1,13 +1,19 @@
 # Build the static CyberDeck Radio app and publish it to GitHub Pages.
 #
-#   push to main ──▶ install ──▶ vite build (PORT/BASE_PATH) ──▶ dist/public
-#                        │                                            │
-#                        └────────────── upload-pages-artifact ◀───────┘
+#   push to main ──▶ install ──▶ [scrape radio.garden] ──▶ vite build ──▶ dist/public
+#   schedule (daily) ──▶  ...same pipeline, always with a fresh catalog...  │
+#                        │                                                 │
+#                        └────────────── upload-pages-artifact ◀───────────┘
 #                                                  │
 #                                                  ▼
-#                                          deploy-pages ──▶ https://cyberdeck-radio.github.io
+#                                          deploy-pages ──▶ GitHub Pages
 #
 # The site is an org Pages site served at the domain root, so BASE_PATH is "/".
+#
+# Radio Garden's API is CORS-locked, so its directory is scraped here (Node, with
+# a browser User-Agent to pass Cloudflare) and baked into public/ before the
+# build. The result is cached per-day so ordinary pushes skip the crawl and only
+# the scheduled run pays for it.
 
 name: Deploy to GitHub Pages
 
@@ -15,6 +21,9 @@ on:
   push:
     branches:
       - main
+  schedule:
+    # Daily at 04:23 UTC — refresh the Radio Garden catalog.
+    - cron: "23 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -29,6 +38,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,6 +57,24 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Compute cache day
+        id: cache-day
+        run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Radio Garden catalog
+        id: radio-garden-cache
+        uses: actions/cache@v4
+        with:
+          path: artifacts/cyberdeck-radio/public/radio-garden.json
+          key: radio-garden-data-${{ steps.cache-day.outputs.day }}
+          restore-keys: |
+            radio-garden-data-
+
+      - name: Scrape Radio Garden
+        if: steps.radio-garden-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: pnpm --filter @workspace/scripts run scrape:radio-garden
 
       - name: Build
         run: pnpm --filter @workspace/cyberdeck-radio build

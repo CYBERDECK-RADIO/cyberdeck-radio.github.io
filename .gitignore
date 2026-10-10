@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Generated Radio Garden catalog (scraped in CI, not committed)
+artifacts/cyberdeck-radio/public/radio-garden.json
