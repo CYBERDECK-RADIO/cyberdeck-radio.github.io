@@ -4,6 +4,9 @@
  *   query ──▶ 3 parallel category fetches (name / tag / country)
  *          ──▶ normalizeStations ──▶ Station[] (deduped, capped)
  *
+ *   startup ──▶ fetchTrendingStations (most-voted, geo-tagged)
+ *           ──▶ normalizeStations ──▶ Station[] (populates the atlas on load)
+ *
  * Provider JSON is confined here; callers only see Station[]. Timeouts, aborts,
  * and HTTP failures surface as distinct Error messages.
  */
@@ -12,11 +15,16 @@ import type Station from "./types";
 
 const API_ORIGIN = "https://de1.api.radio-browser.info";
 const SEARCH_LIMIT = 30;
+const TRENDING_LIMIT = 100;
 const REQUEST_TIMEOUT_MS = 12_000;
 const SEARCH_FIELDS = ["name", "tag", "country"] as const;
 
 type SearchStationsInput = {
   query: string;
+  signal?: AbortSignal;
+};
+
+type TrendingStationsInput = {
   signal?: AbortSignal;
 };
 
@@ -28,6 +36,41 @@ export async function searchStations({
 }: SearchStationsInput): Promise<Station[]> {
   const cleanQuery = query.trim();
   if (!cleanQuery) return [];
+
+  const urls = SEARCH_FIELDS.map((field) => {
+    const url = new URL("/json/stations/search", API_ORIGIN);
+    url.searchParams.set(field, cleanQuery);
+    url.searchParams.set("limit", String(SEARCH_LIMIT));
+    url.searchParams.set("hidebroken", "true");
+    return url;
+  });
+
+  const groups = await requestAll(urls, signal);
+  return normalizeStations(groups.flat()).slice(0, SEARCH_LIMIT);
+}
+
+/**
+ * Most-voted stations that carry coordinates, used to populate the atlas the
+ * moment it opens instead of waiting for the first search.
+ */
+export async function fetchTrendingStations({
+  signal,
+}: TrendingStationsInput = {}): Promise<Station[]> {
+  const url = new URL("/json/stations/search", API_ORIGIN);
+  url.searchParams.set("order", "votes");
+  url.searchParams.set("reverse", "true");
+  url.searchParams.set("limit", String(TRENDING_LIMIT));
+  url.searchParams.set("hidebroken", "true");
+  url.searchParams.set("has_geo_info", "true");
+
+  const [records] = await requestAll([url], signal);
+  return normalizeStations(records).slice(0, TRENDING_LIMIT);
+}
+
+async function requestAll(
+  urls: URL[],
+  signal?: AbortSignal,
+): Promise<unknown[][]> {
   if (signal?.aborted) {
     throw signal.reason ?? new DOMException("Search was cancelled", "AbortError");
   }
@@ -42,13 +85,9 @@ export async function searchStations({
   signal?.addEventListener("abort", forwardAbort, { once: true });
 
   try {
-    const resultGroups = await Promise.all(
-      SEARCH_FIELDS.map((field) =>
-        fetchCategory(field, cleanQuery, requestController.signal),
-      ),
+    return await Promise.all(
+      urls.map((url) => requestStations(url, requestController.signal)),
     );
-
-    return normalizeStations(resultGroups.flat()).slice(0, SEARCH_LIMIT);
   } catch (error) {
     if (signal?.aborted) throw error;
     if (timedOut) {
@@ -62,16 +101,10 @@ export async function searchStations({
   }
 }
 
-async function fetchCategory(
-  field: (typeof SEARCH_FIELDS)[number],
-  query: string,
+async function requestStations(
+  url: URL,
   signal: AbortSignal,
 ): Promise<unknown[]> {
-  const url = new URL("/json/stations/search", API_ORIGIN);
-  url.searchParams.set(field, query);
-  url.searchParams.set("limit", String(SEARCH_LIMIT));
-  url.searchParams.set("hidebroken", "true");
-
   let response: Response;
   try {
     response = await fetch(url, {
@@ -140,6 +173,7 @@ function normalizeStations(records: unknown[]): Station[] {
           ...(bitrate ? { bitrate } : {}),
         },
       ],
+      checkUrl: healthCheckUrl(id),
       ...(countryCode ? { countryCode } : {}),
       ...(country ? { country } : {}),
       ...(coordinates ? { coordinates } : {}),
@@ -148,6 +182,15 @@ function normalizeStations(records: unknown[]): Station[] {
   }
 
   return stations;
+}
+
+/**
+ * radio-browser re-resolves and validates a station stream server-side, so the
+ * browser can ask "is this channel actually up?" without touching the stream
+ * host directly (which would trip CORS on arbitrary icecast servers).
+ */
+export function healthCheckUrl(stationId: string): string {
+  return new URL(`/json/url/${encodeURIComponent(stationId)}`, API_ORIGIN).toString();
 }
 
 function isRecord(value: unknown): value is ProviderRecord {

@@ -91,6 +91,50 @@ describe("Deck", () => {
     expect(screen.getByTestId("deck-visualizer-mode").textContent).toBe("SIMULATED");
   });
 
+  it("hides the style toggle when no handler is provided", () => {
+    renderDeck({ status: "idle" });
+
+    expect(screen.queryByTestId("deck-visualizer-style")).toBeNull();
+  });
+
+  it("shows the active style and cycles it through the callback", () => {
+    const onCycleVisualizerStyle = vi.fn();
+    render(
+      <Deck
+        station={station("s1")}
+        playback={{ status: "idle" }}
+        volume={0.6}
+        onTogglePlayback={vi.fn()}
+        onStop={vi.fn()}
+        onVolumeChange={vi.fn()}
+        visualizerStyle="spectrum"
+        onCycleVisualizerStyle={onCycleVisualizerStyle}
+      />,
+    );
+
+    const toggle = screen.getByTestId("deck-visualizer-style");
+    expect(toggle.textContent).toBe("SPECTRUM");
+    toggle.click();
+    expect(onCycleVisualizerStyle).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows VU when that style is active", () => {
+    render(
+      <Deck
+        station={station("s1")}
+        playback={{ status: "idle" }}
+        volume={0.6}
+        onTogglePlayback={vi.fn()}
+        onStop={vi.fn()}
+        onVolumeChange={vi.fn()}
+        visualizerStyle="vu"
+        onCycleVisualizerStyle={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("deck-visualizer-style").textContent).toBe("VU");
+  });
+
   it("reflects the volume slider value", () => {
     renderDeck({ status: "idle" });
 

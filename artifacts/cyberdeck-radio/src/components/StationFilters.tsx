@@ -37,21 +37,23 @@ export default function StationFilters({
         <SlidersHorizontal aria-hidden="true" />
         Filter
       </span>
-      <label className="station-filters__field">
-        <span className="sr-only">Filter by country</span>
-        <select
-          value={country ?? ""}
-          onChange={(event) => onCountryChange(event.target.value || null)}
-          data-testid="filter-country"
-        >
-          <option value="">All countries</option>
-          {countries.map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-      </label>
+      {countries.length > 0 && (
+        <label className="station-filters__field">
+          <span className="sr-only">Filter by country</span>
+          <select
+            value={country ?? ""}
+            onChange={(event) => onCountryChange(event.target.value || null)}
+            data-testid="filter-country"
+          >
+            <option value="">All countries</option>
+            {countries.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="station-filters__field">
         <span className="sr-only">Filter by genre</span>
         <select

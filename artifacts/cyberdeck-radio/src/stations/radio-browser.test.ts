@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { searchStations } from "./radio-browser";
+import { fetchTrendingStations, searchStations } from "./radio-browser";
 
 const makeResponse = (body: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(body), {
@@ -53,6 +53,7 @@ describe("searchStations", () => {
           },
         ],
         homepage: "https://example.jp/",
+        checkUrl: "https://de1.api.radio-browser.info/json/url/station-1",
       },
     ]);
   });
@@ -224,5 +225,94 @@ describe("searchStations", () => {
       "station-genre",
       "station-country",
     ]);
+  });
+});
+
+describe("fetchTrendingStations", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("requests the most-voted geo-tagged stations in one call", async () => {
+    const fetchMock = vi.fn((_request: URL | string, _options?: RequestInit) =>
+      Promise.resolve(
+        makeResponse([
+          {
+            stationuuid: "trend-1",
+            name: "Global Wave",
+            url: "https://stream.example/wave",
+            tags: "world",
+            countrycode: "fr",
+            geo_lat: 48.85,
+            geo_long: 2.35,
+          },
+        ]),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const stations = await fetchTrendingStations();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = new URL(fetchMock.mock.calls[0]?.[0] as URL | string);
+    expect(url.pathname).toBe("/json/stations/search");
+    expect(url.searchParams.get("order")).toBe("votes");
+    expect(url.searchParams.get("reverse")).toBe("true");
+    expect(url.searchParams.get("hidebroken")).toBe("true");
+    expect(url.searchParams.get("has_geo_info")).toBe("true");
+    expect(url.searchParams.get("limit")).toBe("100");
+    expect(stations).toHaveLength(1);
+    expect(stations[0]).toMatchObject({
+      id: "trend-1",
+      name: "Global Wave",
+      countryCode: "FR",
+      coordinates: [2.35, 48.85],
+    });
+  });
+
+  it("keeps records without coordinates, leaving them unmapped rather than hidden", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          makeResponse([
+            { stationuuid: "no-geo", name: "Landlocked", url: "https://stream.example/a" },
+            {
+              stationuuid: "geo",
+              name: "Harbour FM",
+              url: "https://stream.example/b",
+              geo_lat: 1,
+              geo_long: 2,
+            },
+          ]),
+        ),
+      ),
+    );
+
+    const stations = await fetchTrendingStations();
+
+    expect(stations.map((station) => station.id)).toEqual(["no-geo", "geo"]);
+    expect(stations[0]?.coordinates).toBeUndefined();
+    expect(stations[1]?.coordinates).toEqual([2, 1]);
+  });
+
+  it("propagates aborts so a cancelled cold open stays silent", async () => {
+    const fetchMock = vi.fn(
+      (_request: URL, options: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          options.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("Aborted", "AbortError")),
+            { once: true },
+          );
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const controller = new AbortController();
+
+    const pending = fetchTrendingStations({ signal: controller.signal });
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
   });
 });

@@ -348,6 +348,7 @@ export default function StationMapFallback({
                   }
                 }}
               >
+                <circle className="station-map-fallback__marker-pulse" cx={point.x} cy={point.y} r={isSelected ? 12 : 9} />
                 <circle className="station-map-fallback__marker-halo" cx={point.x} cy={point.y} r={isSelected ? 9 : 6} />
                 <circle className="station-map-fallback__marker-dot" cx={point.x} cy={point.y} r={isSelected ? 4.5 : 3} />
                 <title>{station.name}</title>

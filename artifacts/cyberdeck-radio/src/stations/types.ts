@@ -21,6 +21,12 @@ type Station = {
     bitrate?: number;
   }>;
   homepage?: string;
+  /**
+   * Probe used by the background health worker to decide live/offline.
+   * radio-browser sets this to its server-side /json/url check; streaming
+   * sources (SomaFM) point at the icecast URL that answers with CORS headers.
+   */
+  checkUrl?: string;
 };
 
 export default Station;
