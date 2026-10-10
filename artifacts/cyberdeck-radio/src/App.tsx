@@ -1,5 +1,20 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+/**
+ * CyberDeck Radio shell: search → directory → map/list selection → playback.
+ *
+ *   query ──▶ radio-browser ──▶ Station[] ──▶ list + map markers
+ *                                                │  select
+ *                                                ▼
+ *   selectedStation ──▶ AudioController ──▶ PlaybackState ──▶ transport deck
+ *                          ▲  play/pause/stop/volume (user actions)
+ *                          └── error ──▶ retry via play again
+ *
+ * The shell owns selection state; the controller owns playback state. Selecting
+ * a station never starts audio — only the explicit play action does.
+ */
+
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createAudioController } from '@/audio/audio-controller';
 import { ErrorBoundary } from '@/components/error-boundary';
 import StationMap from '@/components/StationMap';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,7 +22,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { searchStations } from '@/stations/radio-browser';
 import type Station from '@/stations/types';
-import { ArrowDownRight, ArrowRight, AudioLines, Globe2, Radio, Search, Signal, Waves } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, AudioLines, Globe2, Pause, Play, Radio, Search, Signal, Square, Volume2, Waves } from 'lucide-react';
 import {
   Route,
   Switch,
@@ -26,6 +41,15 @@ function Home() {
   const [errorMessage, setErrorMessage] = useState('');
   const [attempt, setAttempt] = useState(0);
   const latestRequest = useRef(0);
+  const [controller] = useState(() => createAudioController());
+  const playback = useSyncExternalStore(controller.subscribe, controller.getState);
+  const [volume, setVolume] = useState(0.8);
+
+  useEffect(() => () => controller.dispose(), [controller]);
+
+  useEffect(() => {
+    controller.setVolume(volume);
+  }, [controller, volume]);
 
   useEffect(() => {
     if (!submittedQuery) return;
@@ -64,6 +88,24 @@ function Home() {
   function handleSelectStation(stationId: string) {
     const station = stations.find((item) => item.id === stationId);
     if (station) setSelectedStation(station);
+  }
+
+  const isTuning = playback.status === 'playing' || playback.status === 'loading';
+
+  function togglePlayback() {
+    if (!selectedStation) return;
+    if (isTuning) controller.pause();
+    else void controller.play(selectedStation);
+  }
+
+  function playbackLabel() {
+    switch (playback.status) {
+      case 'loading': return `TUNING · ${playback.station.name || 'UNTITLED STATION'}`;
+      case 'playing': return `ON AIR · ${playback.station.name || 'UNTITLED STATION'}`;
+      case 'paused': return `PAUSED · ${playback.station.name || 'UNTITLED STATION'}`;
+      case 'error': return 'SIGNAL LOST';
+      default: return 'STANDBY';
+    }
   }
 
   function locationLabel(station: Station) {
@@ -208,6 +250,51 @@ function Home() {
                   <p>Select a station from your results to lock it into the receiver.</p>
                 </div>
               )}
+              <div className="transport" data-testid="deck-transport">
+                <div className="transport-status">
+                  <span className={`transport-led${isTuning ? ' live' : ''}`} aria-hidden="true" />
+                  <span data-testid="text-playback-status">{playbackLabel()}</span>
+                </div>
+                <div className="transport-controls">
+                  <button
+                    type="button"
+                    className="transport-button"
+                    onClick={togglePlayback}
+                    disabled={!selectedStation}
+                    aria-label={isTuning ? 'Pause station' : 'Play station'}
+                    aria-pressed={isTuning}
+                    data-testid="button-play-station"
+                  >
+                    {isTuning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+                  </button>
+                  <button
+                    type="button"
+                    className="transport-button"
+                    onClick={() => controller.stop()}
+                    disabled={playback.status === 'idle'}
+                    aria-label="Stop station"
+                    data-testid="button-stop-station"
+                  >
+                    <Square aria-hidden="true" />
+                  </button>
+                  <label className="transport-volume">
+                    <Volume2 aria-hidden="true" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={volume}
+                      onChange={(event) => setVolume(Number(event.target.value))}
+                      aria-label="Playback volume"
+                      data-testid="input-volume"
+                    />
+                  </label>
+                </div>
+                {playback.status === 'error' && (
+                  <p className="transport-error" role="alert" data-testid="text-playback-error">{playback.message}</p>
+                )}
+              </div>
             </div>
             <div className="side-card">
               <div className="side-heading"><span>Signal notes</span><span>RX / 01</span></div>
