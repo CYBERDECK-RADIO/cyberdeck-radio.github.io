@@ -29,6 +29,7 @@ A static radio-discovery app for finding real stations worldwide, with a retro r
 - `artifacts/cyberdeck-radio/src/components/StationMap.tsx` — interactive world map, station markers, and focus behavior
 - `artifacts/cyberdeck-radio/src/stations/types.ts` — app-owned station data contract
 - `artifacts/cyberdeck-radio/src/stations/radio-browser.ts` — Radio Browser API adapter and response normalization
+- `artifacts/cyberdeck-radio/src/audio/audio-controller.ts` — single playback state machine: HTTPS-only candidate filtering, one-pass stream fallback, autoplay-rejection recovery, volume clamping
 - `artifacts/cyberdeck-radio/src/map/nearest-station.ts` — geographic nearest-station selection
 - `artifacts/cyberdeck-radio/src/map/world-data.ts` — bundled Natural Earth country boundaries
 - `artifacts/cyberdeck-radio/src/index.css` — app theme and responsive layout
@@ -41,12 +42,14 @@ A static radio-discovery app for finding real stations worldwide, with a retro r
 - Keep provider JSON behind the station adapter; UI code consumes only the app-owned `Station` type.
 - MapLibre renders bundled Natural Earth boundaries, avoiding external tile requests and API-key requirements.
 - The map selects the station closest to its center after search results load or map movement settles; focus changes do not start playback.
+- One `AudioController` owns one audio element and is the single source of playback truth; the deck renders controller state and never guesses from button clicks. Playback starts only on an explicit play action — selecting a station never auto-plays.
+- Stream candidates are filtered to HTTPS on an HTTPS page and tried in order with at most one pass; a rejected `play()` (autoplay policy) is a recoverable error, not a silent success.
 - Do not proxy or downgrade stream URLs. Playback work must preserve HTTPS-first behavior and continue direct audio if Web Audio processing is blocked.
 - Do not add a backend, database, account system, AI model, or scheduled crawler unless a later product decision requires it.
 
 ## Product
 
-Listeners can search the live station directory by station name, country, or genre, explore station coordinates on a pannable and zoomable world map, and select a station to inspect its metadata. The current slice does not yet play audio.
+Listeners can search the live station directory by station name, country, or genre, explore station coordinates on a pannable and zoomable world map, and select a station to inspect its metadata. A selected station can be played over its HTTPS stream with play/pause/stop and volume controls; failed streams surface an explicit error and can be retried without reloading.
 
 ## User preferences
 

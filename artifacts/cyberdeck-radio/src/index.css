@@ -197,6 +197,21 @@
 .selected-detail strong { color:#c5bdab; font-weight:400; }
 .side-note { color:#767f80; font-size:10px; line-height:1.6; margin:0; }
 .side-note strong { color:#b8b3a6; font-weight:500; }
+.transport { display:flex; flex-direction:column; gap:11px; border-top:1px solid rgba(226,220,205,.1); margin-top:14px; padding-top:13px; }
+.transport-status { display:flex; align-items:center; gap:7px; color:#9aa1a0; font:9px var(--app-font-mono); text-transform:uppercase; letter-spacing:.11em; }
+.transport-led { width:6px; height:6px; border-radius:50%; background:#5c6663; }
+.transport-led.live { background:#d5b466; box-shadow:0 0 8px rgba(213,180,102,.55); animation:pulse-led 1.4s ease-in-out infinite; }
+@keyframes pulse-led { 0%,100% { opacity:1; } 50% { opacity:.42; } }
+.transport-controls { display:flex; align-items:center; gap:9px; }
+.transport-button { display:grid; place-items:center; width:34px; height:34px; color:#d5b466; border:1px solid rgba(213,182,106,.32); border-radius:4px; background:rgba(213,182,106,.05); cursor:pointer; transition:background .16s,border-color .16s,color .16s; }
+.transport-button:hover:not(:disabled) { background:rgba(213,182,106,.13); }
+.transport-button:disabled { color:#5c6663; border-color:rgba(226,220,205,.1); background:transparent; cursor:not-allowed; }
+.transport-button svg { width:14px; height:14px; }
+.transport-button:focus-visible,.transport-volume input:focus-visible { outline:2px solid rgba(213,182,106,.55); outline-offset:2px; }
+.transport-volume { display:flex; align-items:center; gap:7px; margin-left:auto; color:#838b89; }
+.transport-volume svg { width:14px; height:14px; }
+.transport-volume input { width:92px; accent-color:#d5b466; cursor:pointer; }
+.transport-error { margin:0; color:#d18477; font-size:10px; line-height:1.5; }
 .state-panel { min-height:260px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:32px 18px; color:#8d9491; }
 .state-glyph { width:62px; height:62px; display:grid; place-items:center; border:1px solid rgba(213,182,106,.22); border-radius:50%; color:#d4b369; margin-bottom:19px; background:rgba(213,182,106,.035); }
 .state-glyph svg { width:22px; height:22px; }
