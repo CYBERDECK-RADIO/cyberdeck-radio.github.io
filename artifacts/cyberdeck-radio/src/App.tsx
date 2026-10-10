@@ -1,7 +1,11 @@
 /**
- * CyberDeck Radio shell: search → directory → map/list selection → playback.
+ * CyberDeck Radio shell: single-viewport search → directory → playback.
  *
- *   query ──▶ radio-browser ──▶ Station[] ──▶ filters ──▶ list + map markers
+ *   layout (no page scroll): grid [ top bar | search | main ]
+ *     main: [ results (scrolls internally) | deck (fixed) ]
+ *     mobile: deck on top, results below
+ *
+ *   query ──▶ radio-browser ──▶ Station[] ──▶ filters ──▶ scrollable list
  *                                                │  select
  *                                                ▼
  *   selectedStation ──▶ AudioController ──▶ PlaybackState ──▶ deck
@@ -18,7 +22,6 @@ import { createAudioController } from '@/audio/audio-controller';
 import Deck from '@/components/deck/Deck';
 import { ErrorBoundary } from '@/components/error-boundary';
 import StationFilters from '@/components/StationFilters';
-import StationMap from '@/components/StationMap';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -118,19 +121,6 @@ function Home() {
           <div className="top-meta"><span className="live-led" /> GLOBAL FREQUENCY DIRECTORY <span>·</span> 01 / 01</div>
         </header>
 
-        <section className="hero" aria-labelledby="hero-title">
-          <div>
-            <div className="eyebrow">Shortwave for the curious</div>
-            <h1 id="hero-title">Tune into<br /><span>somewhere.</span></h1>
-            <p className="hero-copy">A receiver for the wider world. Find a voice, a rhythm, a late-night signal — broadcast from somewhere you have never been.</p>
-          </div>
-          <div className="dial-module" aria-hidden="true">
-            <div className="dial-top"><span>RX · 04</span><span>WORLD BAND</span></div>
-            <div className="dial-window"><div className="dial-wave" /><div className="dial-needle" /></div>
-            <div className="dial-foot"><span>88.0</span><span>98.5</span><strong>FM / AM</strong><span>108.0</span></div>
-          </div>
-        </section>
-
         <section className="search-panel" aria-label="Station search">
           <form onSubmit={handleSearch} data-testid="form-station-search">
             <div className="search-label"><span>01 — Scan the dial</span><span>SEARCH STATIONS WORLDWIDE</span></div>
@@ -155,19 +145,11 @@ function Home() {
           </form>
         </section>
 
-        <div className="map-panel">
-          <StationMap
-            stations={visibleStations}
-            selectedStationId={selectedStation?.id ?? null}
-            onSelectStation={handleSelectStation}
-          />
-        </div>
-
         <section className="workspace" aria-label="Station directory">
-          <div className="results-column">
+          <div className="results-column" data-testid="results-region">
             <div className="results-head">
               <div>
-                <div className="section-kicker">03 — The directory</div>
+                <div className="section-kicker">02 — The directory</div>
                 <h2>{status === 'success' ? `Signals for “${submittedQuery}”` : 'Find your frequency'}</h2>
               </div>
               {status === 'success' && <span className="result-count" data-testid="text-result-count">{visibleStations.length} {visibleStations.length === 1 ? 'SIGNAL' : 'SIGNALS'}</span>}
@@ -250,7 +232,7 @@ function Home() {
 
           <aside className="side-column" aria-label="Tuned station">
             <div className="side-card">
-              <div className="side-heading"><span>04 — Current tuning</span><span className={`selected-state${selectedStation ? ' active' : ''}`} data-testid="status-station-selection">{selectedStation ? 'LOCKED' : 'STANDBY'}</span></div>
+              <div className="side-heading"><span>03 — Current tuning</span><span className={`selected-state${selectedStation ? ' active' : ''}`} data-testid="status-station-selection">{selectedStation ? 'LOCKED' : 'STANDBY'}</span></div>
               <Deck
                 station={selectedStation}
                 playback={playback}
@@ -260,18 +242,8 @@ function Home() {
                 onVolumeChange={setVolume}
               />
             </div>
-            <div className="side-card">
-              <div className="side-heading"><span>Signal notes</span><span>RX / 01</span></div>
-              <p className="side-note"><strong>One world, many voices.</strong> Search taps into a live directory of independent radio stations. Each listing carries its own stream details and point of origin.</p>
-            </div>
           </aside>
         </section>
-
-        <footer className="footer-line">
-          <span>CYBERDECK RADIO · FIELD RECEIVER 001</span>
-          <span>STATIONS VIA <a href="https://www.radio-browser.info/" target="_blank" rel="noreferrer noopener">RADIO-BROWSER.INFO</a></span>
-          <span>LISTEN BEYOND THE STATIC</span>
-        </footer>
       </div>
     </main>
   );
