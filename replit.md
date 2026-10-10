@@ -88,6 +88,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 - Vite emits workers as IIFE by default; module workers must set `worker: { format: 'es' }` in `vite.config.ts` or `new Worker(..., { type: "module" })` fails to parse.
 - Never cancel `response.body` before reading a JSON health probe — it consumes the body and turns valid `{ok:true}` responses into "offline". Classify first, cancel after.
 - icecast-style mounts (e.g. `ice2.somafm.com/…-128-mp3`) can return 403 to browser `fetch`; probe reachability with the channel's `.pls` playlist URL instead.
+- radio.garden returns a Cloudflare `403` challenge to plain requests and only sets `Access-Control-Allow-Origin` for its own origin; the crawler must send a browser User-Agent (and never runs in the browser). The generated `public/radio-garden.json` is gitignored, so the adapter treats a missing file (`404`) as an empty catalog rather than an error — the RADIO GARDEN source is simply empty until CI bakes it.
+- Follow radio.garden's `channel.mp3` redirect with `redirect: "manual"` and read the `Location` header; the resolved direct URL is only kept when it is `https` (the app's HTTPS-only playback rule), with the `https` `channel.mp3` listen URL retained as a playable fallback.
 - The app's Vite workflow supplies `PORT` and `BASE_PATH`; do not start the artifact with a manually configured duplicate workflow.
 
 ## Pointers
