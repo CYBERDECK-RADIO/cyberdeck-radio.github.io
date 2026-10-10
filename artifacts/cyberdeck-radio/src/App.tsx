@@ -1,7 +1,7 @@
 /**
  * CyberDeck Radio shell: search → directory → map/list selection → playback.
  *
- *   query ──▶ radio-browser ──▶ Station[] ──▶ list + map markers
+ *   query ──▶ radio-browser ──▶ Station[] ──▶ filters ──▶ list + map markers
  *                                                │  select
  *                                                ▼
  *   selectedStation ──▶ AudioController ──▶ PlaybackState ──▶ deck
@@ -12,15 +12,17 @@
  * a station never starts audio — only the explicit play action does.
  */
 
-import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createAudioController } from '@/audio/audio-controller';
 import Deck from '@/components/deck/Deck';
 import { ErrorBoundary } from '@/components/error-boundary';
+import StationFilters from '@/components/StationFilters';
 import StationMap from '@/components/StationMap';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import { EMPTY_FILTERS, collectFilterOptions, filterStations, type StationFilters as StationFiltersState } from '@/stations/filter-stations';
 import { searchStations } from '@/stations/radio-browser';
 import { stationLocationLabel } from '@/stations/station-meta';
 import type Station from '@/stations/types';
@@ -42,6 +44,7 @@ function Home() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'empty' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [attempt, setAttempt] = useState(0);
+  const [filters, setFilters] = useState<StationFiltersState>(EMPTY_FILTERS);
   const latestRequest = useRef(0);
   const [controller] = useState(() => createAudioController());
   const playback = useSyncExternalStore(controller.subscribe, controller.getState);
@@ -60,6 +63,7 @@ function Home() {
     setStatus('loading');
     setStations([]);
     setSelectedStation(null);
+    setFilters(EMPTY_FILTERS);
     setErrorMessage('');
     searchStations({ query: submittedQuery, signal: controller.signal })
       .then((results) => {
@@ -91,6 +95,9 @@ function Home() {
     const station = stations.find((item) => item.id === stationId);
     if (station) setSelectedStation(station);
   }
+
+  const filterOptions = useMemo(() => collectFilterOptions(stations), [stations]);
+  const visibleStations = useMemo(() => filterStations(stations, filters), [stations, filters]);
 
   const isTuning = playback.status === 'playing' || playback.status === 'loading';
 
@@ -150,7 +157,7 @@ function Home() {
 
         <div className="map-panel">
           <StationMap
-            stations={stations}
+            stations={visibleStations}
             selectedStationId={selectedStation?.id ?? null}
             onSelectStation={handleSelectStation}
           />
@@ -163,8 +170,19 @@ function Home() {
                 <div className="section-kicker">03 — The directory</div>
                 <h2>{status === 'success' ? `Signals for “${submittedQuery}”` : 'Find your frequency'}</h2>
               </div>
-              {status === 'success' && <span className="result-count" data-testid="text-result-count">{stations.length} {stations.length === 1 ? 'SIGNAL' : 'SIGNALS'}</span>}
+              {status === 'success' && <span className="result-count" data-testid="text-result-count">{visibleStations.length} {visibleStations.length === 1 ? 'SIGNAL' : 'SIGNALS'}</span>}
             </div>
+            {status === 'success' && (
+              <StationFilters
+                countries={filterOptions.countries}
+                genres={filterOptions.genres}
+                country={filters.country}
+                genre={filters.genre}
+                onCountryChange={(value) => setFilters((current) => ({ ...current, country: value }))}
+                onGenreChange={(value) => setFilters((current) => ({ ...current, genre: value }))}
+                onClear={() => setFilters(EMPTY_FILTERS)}
+              />
+            )}
             {status === 'idle' && (
               <div className="state-panel" data-testid="state-search-idle">
                 <div className="state-glyph"><Signal aria-hidden="true" /></div>
@@ -192,9 +210,17 @@ function Home() {
                 <button className="retry-button" onClick={retrySearch} data-testid="button-retry-search">Try again</button>
               </div>
             )}
-            {status === 'success' && (
+            {status === 'success' && visibleStations.length === 0 && (
+              <div className="state-panel" data-testid="state-filter-empty">
+                <div className="state-glyph"><AudioLines aria-hidden="true" /></div>
+                <h3>No signals match those filters.</h3>
+                <p>Nothing in “{submittedQuery}” matches the selected country and genre. Clear the filters to see all {stations.length} results.</p>
+                <button className="retry-button" onClick={() => setFilters(EMPTY_FILTERS)} data-testid="button-clear-filters">Clear filters</button>
+              </div>
+            )}
+            {status === 'success' && visibleStations.length > 0 && (
               <div className="station-list" role="list" data-testid="list-station-results">
-                {stations.map((station, index) => {
+                {visibleStations.map((station, index) => {
                   const isSelected = selectedStation?.id === station.id;
                   const stream = station.streams[0];
                   return (
