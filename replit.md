@@ -1,9 +1,12 @@
-# [Project name]
+# CyberDeck Radio
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A static radio-discovery app for finding real stations worldwide, with a retro receiver interface. The first vertical slice provides live station search and station selection.
 
 ## Run & Operate
 
+- `pnpm --filter @workspace/cyberdeck-radio run dev` — run the web app through its managed workflow
+- `pnpm --filter @workspace/cyberdeck-radio run typecheck` — typecheck the web app
+- `pnpm --filter @workspace/cyberdeck-radio test` — run station-provider tests
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
@@ -22,15 +25,23 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/cyberdeck-radio/src/App.tsx` — station search, search states, and selected-station UI
+- `artifacts/cyberdeck-radio/src/stations/types.ts` — app-owned station data contract
+- `artifacts/cyberdeck-radio/src/stations/radio-browser.ts` — Radio Browser API adapter and response normalization
+- `artifacts/cyberdeck-radio/src/index.css` — app theme and responsive layout
+- `artifacts/cyberdeck-radio/src/stations/radio-browser.test.ts` — adapter tests
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- CyberDeck Radio is a static, browser-only app; its current station search calls the public Radio Browser API directly.
+- Keep provider JSON behind the station adapter; UI code consumes only the app-owned `Station` type.
+- Search is list-first; map and audio playback are separate future vertical slices, not prerequisites for station selection.
+- Do not proxy or downgrade stream URLs. Playback work must preserve HTTPS-first behavior and continue direct audio if Web Audio processing is blocked.
+- Do not add a backend, database, account system, AI model, or scheduled crawler unless a later product decision requires it.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Listeners can search the live station directory by name, place, or genre and select a station to inspect its available metadata. The current slice does not yet play audio or show the geographic map.
 
 ## User preferences
 
@@ -38,7 +49,9 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Radio Browser records can omit country, genres, coordinates, bitrate, or resolved stream URLs; treat those fields as optional.
+- A directory result is not a guarantee that a stream is currently reachable. Keep provider errors distinct from a successful search with no results.
+- The app's Vite workflow supplies `PORT` and `BASE_PATH`; do not start the artifact with a manually configured duplicate workflow.
 
 ## Pointers
 

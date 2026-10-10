@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CyberDeck Radio"
+description = "A static radio discovery app for finding real stations and building toward geographic browsing and a retro audio deck. The first slice lets listeners search stations, explore results, and select a station with clear loading and error states."
+version = "1.0.0"
+id = "artifacts/cyberdeck-radio"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18943
+
+[services.development]
+run = "pnpm --filter @workspace/cyberdeck-radio run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cyberdeck-radio", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/cyberdeck-radio/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18943"
+BASE_PATH = "/"

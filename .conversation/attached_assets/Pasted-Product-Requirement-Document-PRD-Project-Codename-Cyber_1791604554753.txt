@@ -1,0 +1,432 @@
+Product Requirement Document (PRD)
+
+Project Codename: CyberDeck Radio (Global Map Streamer & Retro Audio Deck)
+
+Target Platform: Static Web App (GitHub Pages, Zero-Server Cost)
+
+Version: 1.0.0-PROD
+
+Author: Product & Architecture Team
+
+1. Executive Summary & Vision
+
+1.1 Vision
+
+CyberDeck Radio is an open-source, serverless, static web-based radio player hosted entirely on GitHub Pages. It marries the geographical discovery of modern geospatial players (such as Radio Garden) with the peak-era tactile nostalgia of 90s/2000s skinnable desktop audio players (Winamp classic .wsz and JetAudio 4/5/7 Hi-Fi Racks).
+
+1.2 The Radical Innovations
+
+Zero-Server Ecosystem with Autonomous GitHub Action Bot: A purely static client powered by GitHub Actions cron jobs that crawl, probe, sanitize, and reconcile global radio stream directories every 6 hours, eliminating dead streams autonomously.
+
+Dual Paradigm Interface:
+
+Geo-Deck Mode: A 3D vector globe/choropleth map with spatial sound filtering and localized atmospheric daylight/night ambiance.
+
+Retro Hi-Fi Rack Mode: Pixel-perfect skinnable interfaces featuring authentic Winamp .wsz engines and modular JetAudio component racks (Amplifier, Graphic Equalizer, Cassette Deck, Spectrum Analyzer).
+
+Client-Side AI DJ & Vibe Navigator: In-browser semantic search using Transformers.js / lightweight vector embeddings, paired with the Web Speech API and Web Audio API for synthetic DJ station identification, dynamic crossfades, and vinyl/tape crackle simulation.
+
+Autonomous Clipart Discovery & Procedural Vector Generator: Multi-tiered asset discovery (Clearbit, MusicBrainz, Last.fm, iTunes API) backed by an in-browser procedural generative cassette/radio badge engine (RoughJS + Canvas/SVG) whenever official station branding is absent.
+
+2. Audio Stream Sources & Aggregation Strategy
+
+To guarantee continuous audio availability without vendor lock-in, CyberDeck Radio ingests streams from curated public APIs and community-maintained registries.
+
+2.1 Primary Stream Sources
+
+Provider
+
+Access Method
+
+Strengths
+
+Formats Available
+
+Rate Limits / Terms
+
+Radio Browser Community Database
+
+Free REST API (at1.api.radio-browser.info)
+
+45,000+ globally crowdsourced stations, tagged with geo-coordinates, bitrate, codec, and country codes
+
+MP3, AAC, OGG, Opus, HLS
+
+Free, open community API, mirrorable via raw database dumps
+
+SomaFM Public Streams
+
+Direct static JSON / PLS playlists
+
+High-fidelity underground curated streams (Groove Salad, Drone Zone, etc.)
+
+AAC (64/128k), MP3 (128/320k)
+
+Open non-commercial static links
+
+Internet Radio Cache (Icecast / Shoutcast Public Directories)
+
+Static directory dumps & GitHub repo scrapers
+
+High diversity, regional local stations
+
+MP3, AAC+
+
+Crawled via CI cron jobs
+
+Public Service Broadcasters (BBC, NPR, ARD, Radio France)
+
+Direct CDN HLS / MP3 links
+
+Extremely stable high-bandwidth streams
+
+HLS (.m3u8), AAC
+
+Subject to geo-restrictions (handled via failover)
+
+2.2 Stream Metadata Schema
+
+Stations are serialized into chunked static JSON files (/data/stations/{country_code}.json) committed directly to the Git repository:
+
+{
+  "id": "rb-961726a2-e421",
+  "name": "Shibuya Chill FM",
+  "country": "JP",
+  "geo": [35.6580, 139.7016],
+  "genre": ["Lofi", "Ambient", "Jazzhop"],
+  "streams": [
+    { "url": "https://stream.shibuyachill.jp/live.aac", "codec": "aac", "bitrate": 192, "cors_status": "open" },
+    { "url": "http://stream-backup.shibuyachill.jp/live.mp3", "codec": "mp3", "bitrate": 128, "cors_status": "mixed_content" }
+  ],
+  "branding": {
+    "favicon": "https://shibuyachill.jp/favicon.ico",
+    "logo_url": null,
+    "fallback_seed": "shibuya-chill-35.65"
+  },
+  "health": {
+    "last_checked": "2026-10-10T04:00:00Z",
+    "uptime_score": 0.992,
+    "latency_ms": 142
+  }
+}
+
+
+3. High-Level Architecture & Static Deployment
+
+[GitHub Repo]
+   │
+   ├── [.github/workflows/reconcile-streams.yml] (Runs every 6h)
+   │      ├── Tests stream availability (HEAD / ICY probes)
+   │      ├── Resolves Mixed Content / CORS flags
+   │      ├── Enriches metadata & writes static JSON (/data/*.json)
+   │      └── Auto-commits / generates Health Badges
+   │
+[GitHub Pages Edge CDN]
+   │
+   ├── [Static Client App: HTML5 / Tailwind / React or Vanilla Web Components]
+   │      │
+   │      ├── 🗺️ Map Module (MapLibre GL / Globe Mode + Spatial Audio Nodes)
+   │      │
+   │      ├── 📻 Skin Render Engine:
+   │      │     ├── Webamp Core (Winamp 2.x .wsz parser & Web Audio connect)
+   │      │     └── JetAudio Hi-Fi Deck (Canvas/SVG Component Rack Engine)
+   │      │
+   │      ├── 🧠 In-Browser AI Engine:
+   │      │     ├── Transformers.js (Semantic Vibe / Mood Search)
+   │      │     └── Web Speech Synth (Station Identi-Call & Smart DJ Voice)
+   │      │
+   │      ├── 🎨 Visual Asset Fallback Generator:
+   │      │     └── Procedural Cassette/Retro Badge Engine (Canvas / RoughJS)
+   │      │
+   │      └── 🔊 Audio Pipeline & Proxy Failover:
+   │            ├── Hls.js + HTML5 Audio (Codec autodetection)
+   │            ├── Web Audio API (FFT Spectrum Analyzer, Graphic EQ)
+   │            └── Cloudflare Worker / Open CORS Gateway Failover (Mixed Content bypass)
+
+
+4. Core Feature Specifications
+
+4.1 Feature 1: Interactive Geospatial Navigation (The "Globe & Dial")
+
+Engine: MapLibre GL JS with custom retro CRT / green monochrome / cyberpunk vector vector tile styles, switchable to a photorealistic 3D Globe projection.
+
+Micro-Tuning Frequency Dial: Along the bottom edge, a tactile horizontal radio dial simulates classic analog FM/AM/Shortwave tuners. Dragging the needle pans the map longitudinally; rotating the map tunes the dial.
+
+Proximity Audio & Atmospheric Noise:
+
+As users zoom into a city (e.g., Berlin or Rio), pins reveal local radio nodes.
+
+Hovering/orbiting near clusters blends a gentle shortwave static frequency sweep using synthetic brown/pink noise via Web Audio API.
+
+Day/Night Ambiance Filter: Computes the solar terminator in real-time. Stations located in nighttime zones can optionally trigger warm tube-amplifier saturation filters and twilight background soundscapes.
+
+4.2 Feature 2: Dual Retro Skinnable Systems
+
+A. Winamp Integration (Classic .wsz Skins)
+
+Integrated via modern open-source Webamp web component, mapped directly into the app's Web Audio graph.
+
+Support for uploading or hot-swapping thousands of archived classic Winamp 2.x skins directly from the Internet Archive Skin Museum via static URLs.
+
+Dual-way sync: Selecting a station on the map dynamically populates the Winamp Marquee LCD text with station name, bitrate, and current playing metadata (via ICY stream headers).
+
+B. JetAudio 4/5/7 Hi-Fi Component Rack
+
+Bespoke modular rack engine built in CSS Grid + Canvas rendering:
+
+Main Deck: Digital VFD (Vacuum Fluorescent Display) blue/green phosphor display, mechanical click buttons for Play/Stop/Eject.
+
+Graphic Equalizer Rack: Real 10-band interactive Web Audio BiquadFilter equalizer with classic LED slider needles.
+
+Twin Cassette Deck: Animated spinning cassette reels with realistic tape spools that change diameter over continuous playback duration.
+
+Spectrum Analyzer / V/U Meter: Ballistic analog VU meter needles with realistic overshoot and decay physics.
+
+Custom skin definition schema (jetaudio-skin.json) allowing user skin packs composed of sliced sprite sheets and CSS tint filters.
+
+4.3 Feature 3: Client-Side AI Superpowers (No Server Required)
+
+Semantic Vibe & Mood Search:
+
+Powered by @xenova/transformers.js running an on-device quantization model (all-MiniLM-L6-v2, ~23MB cached in IndexedDB).
+
+Allows natural language prompt queries:
+
+"Moody cyberpunk driving music in rainy weather" -> Maps to Synthwave / Dark ambient stations in Northern Europe or Japan.
+
+"Bustling 1970s sunlit marketplace" -> Maps to Highlife / Cumbia / Afrobeat stations in West Africa or Latin America.
+
+AI Virtual Radio Host / Station Voice:
+
+Client-side Web Speech Synthesis (with pitch, formant shift, and filter effects applied through Web Audio API to sound like a 1980s broadcast radio DJ).
+
+Generates station bumpers during stream buffers: "You are tuned to CyberDeck World Radio, crossing 139 degrees East. Connecting to Tokyo Shibuya Chill..."
+
+Dynamic Audio Restorer & Smart Equalizer:
+
+Analyzes stream frequency distribution in real-time via AnalyserNode.
+
+Low-bitrate (64k MP3) streams automatically route through a high-frequency exciter and tube-warmth impulse response (ConvolverNode) to mask compression artifacts.
+
+4.4 Feature 4: Autonomous Clipart & Procedural Vector Badge Engine
+
+Discovery Hierarchy (Cascade Pipeline):
+
+Level 1: Station favicon / logo_url from Radio Browser metadata.
+
+Level 2: iTunes Search API search by station name + country (https://itunes.apple.com/search?term={name}&entity=podcast).
+
+Level 3: Last.fm Artist/Station logo lookup.
+
+Level 4: DuckDuckGo / Clearbit company domain logo lookup.
+
+Procedural Vector Clipart Generator (Zero-Asset Fallback):
+
+If Levels 1–4 return 404 or missing:
+
+Seeded PRNG generated from station ID + coordinates.
+
+Automatically renders a unique, stylized retro radio badge using Canvas / RoughJS:
+
+Procedural cassette tape badge with custom color palette derived from country flag colors.
+
+Embedded typography with retro pixel font displaying station call letters or frequency (e.g., 98.5 FM).
+
+Holographic or worn-paper texture overlay.
+
+5. Overcoming Edge Cases & Technical Roadblocks
+
+Hosting a live radio player strictly on static GitHub Pages introduces critical technical constraints. The following engineering matrix resolves all blockers:
+
+Edge Case / Problem
+
+Failure Scenario
+
+Architectural Solution & Workaround
+
+Mixed Content (HTTP on HTTPS)
+
+Modern browsers block insecure http:// audio streams loaded on an https://github.io domain.
+
+1. Intelligent Protocol Sorting: Filter HTTPS-native streams first.
+
+
+
+2. Zero-Cost CORS/HTTPS Reverse Proxy: Provide users with a 1-click Cloudflare Worker reverse-proxy script template (free 100k requests/day) and default fallbacks to public streaming relays.
+
+
+
+3. User-Toggle Relay Mode: In-app fallback toggle that transparently routes insecure audio through a secure proxy relay.
+
+CORS Policy Restrictions on Audio Processing
+
+Web Audio API (createMediaElementSource) mutes audio if cross-origin resources lack Access-Control-Allow-Origin: *.
+
+Use dual-mode audio pipe: If CORS is blocked, bypass AudioContext and play directly through standard <audio> tag (audio still plays, while visualizer switches to synthetic animated simulation).
+
+HLS / m3u8 Stream Playback
+
+Native desktop Chrome/Firefox cannot natively play HLS .m3u8 streams.
+
+Dynamically load Hls.js when stream MIME-type is application/x-mpegURL or .m3u8. Fall back to HTML5 audio tag for Safari native HLS.
+
+Mobile Safari / iOS Background Audio Policy
+
+Autoplay blocked; audio pauses when screen locks or tab changes.
+
+1. Unlock Web Audio context on the first user interaction touch event.
+
+
+
+2. MediaSession API: Register full lock-screen media controls with station metadata and procedural cover art.
+
+
+
+3. Silent Audio Loophole: Route continuous silent audio buffer to keep Web Audio thread active during station transitions.
+
+Dead / Offline Streams
+
+Radio stations shut down, change CDN URLs, or experience intermittent dropouts.
+
+1. Multi-Stream Fallbacks: Each station node stores primary + backup URLs.
+
+
+
+2. 5-Second Watchdog Timer: If audio.networkState stalls or errors, automatically failover to backup stream or jump to nearest geographic neighbor station with subtle radio tuner static sound effect.
+
+6. GitHub Actions Cron Automation (Self-Healing Repository)
+
+The repository runs an automated maintenance pipeline without human intervention.
+
+6.1 Workflow Architecture (.github/workflows/reconcile-streams.yml)
+
+Schedule: Runs every 6 hours via cron (0 */6 * * *) + manual workflow_dispatch.
+
+Pipeline Steps:
+
+Fetch Latest Upstream Dumps: Queries Radio Browser API for latest up-voted, active stations.
+
+Concurrent Stream Prober (Go or Node.js multi-threaded worker):
+
+Sends HTTP HEAD / GET range requests with ICY metadata headers.
+
+Validates HTTP response codes (200 OK, 302 Found).
+
+Detects audio codec, bitrate, latency, and HTTPS compatibility.
+
+Cull & Flag Strategy:
+
+Stations failing 3 consecutive probe runs are marked status: "offline" and pruned from active map tiles.
+
+Stations passing HTTPS + CORS checks receive priority tiering cors_status: "verified".
+
+Data Sharding:
+
+Compiles stations into geographic geohash chunks (e.g., /data/geo/u4p.json) to allow fast, lightweight client fetching on the map viewport without downloading huge megabyte payloads.
+
+Auto-Commit:
+
+Writes updated dataset to gh-pages or main branch with [skip ci] Automate Stream Reconciliation commit message.
+
+Generates automated health summary in STATUS.md.
+
+7. User Experience & User Interface Design
+
++-----------------------------------------------------------------------------------+
+|  [CYBERDECK RADIO v1.0]           [Search: "Tokyo Jazz" 🔍]  [Skin: JetAudio-HiFi ▼] |
++-----------------------------------------------------------------------------------+
+|                                                                                   |
+|                                    [ 3D GLOBE / MAP ]                             |
+|                                (Interactive MapLibre GL)                          |
+|                                                                                   |
+|                                  [🔴 Shibuya Chill FM]                            |
+|                                                                                   |
++-----------------------------------------------------------------------------------+
+|  [=== ANALOG FREQUENCY DIAL ===================||=================== 88-108 MHz ] |
++-----------------------------------------------------------------------------------+
+|  +-- JET-AUDIO MODULAR RACK ---------------------------------------------------+  |
+|  | [VFD DISPLAY: SHIBUYA CHILL FM - AAC 192K]  [VOL: ▇▇▇▇▇] [MUTE] [REC] [PWR] |  |
+|  | [VU-LEFT: ▇▇▇▇ ] [VU-RIGHT: ▇▇▇▇ ]  [CASSETTE REEL A (O)   REEL B (O)]      |  |
+|  | [10-BAND EQ: |-| |-| |-| |-| |-| |-| |-| |-| |-| |-| ]  [SPECTRUM VISUALIZER]|  |
+|  +-----------------------------------------------------------------------------+  |
+|  [Cover Art: (Procedural Retro Cassette)]  [AI DJ: Active]  [Bitrate: 192kbps]   |
++-----------------------------------------------------------------------------------+
+
+
+8. Technical Stack & Implementation Matrix
+
+Layer
+
+Selected Technology
+
+Justification
+
+Hosting & CI/CD
+
+GitHub Pages + GitHub Actions
+
+100% free, static distribution, global CDN edge caching.
+
+Front-End Architecture
+
+Vite + React (or Vanilla Web Components) + Tailwind CSS
+
+Ultra-fast initial load (<150KB core bundle), no runtime backend.
+
+Map Engine
+
+MapLibre GL JS
+
+Fully open-source fork of Mapbox, zero API key constraints, supports vector tiles & 3D globes.
+
+Retro Audio Skin Engine
+
+webamp NPM package + Custom HTML5 Canvas JetAudio Renderer
+
+Direct support for .wsz binary extraction; native canvas rendering for JetAudio knobs and displays.
+
+Audio Processing
+
+Web Audio API + hls.js
+
+Native DSP filtering, equalizer, gain, and real-time frequency analysis.
+
+AI Inference
+
+@xenova/transformers.js
+
+Zero-server client vector embeddings for instant semantic search.
+
+Procedural Fallback Art
+
+roughjs + HTML5 Canvas API
+
+Renders warm, hand-drawn vector cassette art on-the-fly with zero network latency.
+
+9. Rollout Roadmap & Milestones
+
+Phase 1: Core Stream Pipeline & Map MVP (Weeks 1–2)
+
+Integrate Radio-Browser API and write stream ingestion script.
+
+Setup MapLibre GL with interactive station pins and basic audio playback.
+
+Phase 2: Retro Skinning & Web Audio Engine (Weeks 3–4)
+
+Integrate Webamp with .wsz skin loader.
+
+Build JetAudio modular component canvas engine (VU meters, EQ, spinning cassette).
+
+Phase 3: AI Vibe Search & Procedural Badges (Weeks 5–6)
+
+Implement Transformers.js semantic search vector pipeline.
+
+Build RoughJS generative cassette artwork fallback engine.
+
+Integrate Web Speech synthetic DJ announcements.
+
+Phase 4: GitHub Actions Autonomous Healer & Edge Hardening (Weeks 7–8)
+
+Implement cron stream prober and shard generator.
+
+Handle Mixed Content failover, mobile iOS media policies, and offline PWA caching.

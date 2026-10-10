@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "GhzPIhyV8j8ZmRW2PTDqj"
+uri = "file://CyberDeck-Radio-Implementation-Plan.md"
+type = "text"
+title = "CyberDeck Radio — Implementation Plan"
+description = "A phased, static-hosted MVP plan with scope, acceptance criteria, technical boundaries, risks, and release checks."
+logical_id = "7f4326e1-1ce5-4104-97a7-6a8889eb3178"
+content_hash = "sha256:8e3094d5122d2d5286d177af979cba170fc01584f50402294d0b37c587bba070"
+size = 12833
+mtime_ms = 1791604628882
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/conversation:1ce68bc4-d54f-4ec1-a949-63a3431f2d76/7f4326e1-1ce5-4104-97a7-6a8889eb3178/3061a170-0e1c-4108-8eb3-68180643a5b1"
+storage_version_token = "1791604636669681"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "-EQyMWeZZr14U4EHPisHt"
+uri = "file://CyberDeck-Radio-Detailed-TODO.md"
+type = "text"
+title = "CyberDeck Radio — Detailed Engineering TODO"
+description = "A 414-line actionable backlog with vertical slices, parallel delegation contracts, TDD cases, KISS guardrails, deep-module checks, and launch criteria."
+logical_id = "08ec3b6b-325e-40e7-bb26-2e910538b11c"
+content_hash = "sha256:cefacb3f2c8d23d6ad0486d7f0673b8e27246d62fd7c11e1a32047a18f2262de"
+size = 26551
+mtime_ms = 1791604825626
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/conversation:1ce68bc4-d54f-4ec1-a949-63a3431f2d76/08ec3b6b-325e-40e7-bb26-2e910538b11c/7b26a666-79d8-4a9c-bbbf-831cd44a5a19"
+storage_version_token = "1791604833014875"
+content_type = "text/markdown"
