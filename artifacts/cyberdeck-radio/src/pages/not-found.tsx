@@ -1,3 +1,9 @@
+/**
+ * Fallback route for unknown paths.
+ *
+ *   unmatched route ──▶ NotFound ──▶ 404 card
+ */
+
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 

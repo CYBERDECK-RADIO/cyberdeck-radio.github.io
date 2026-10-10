@@ -1,3 +1,13 @@
+/**
+ * Dependency-free SVG world map used when WebGL/MapLibre is unavailable.
+ *
+ *   stations + selectedId ──▶ project to 1000x500 ──▶ country paths + markers
+ *   pan / pinch / wheel / keys ──▶ view {x,y,scale} ──▶ transform
+ *   marker click or gesture settle ──▶ onSelectStation(nearest)
+ *
+ * Keeps list-based listening usable when the vector map cannot start.
+ */
+
 import {
   useCallback,
   useEffect,

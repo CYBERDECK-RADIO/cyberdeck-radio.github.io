@@ -1,3 +1,12 @@
+/**
+ * Picks the station closest to a map center using the haversine distance.
+ *
+ *   stations + center [lng, lat] ──▶ findNearestStation ──▶ Station | null
+ *
+ * An invalid center returns null; stations without valid coordinates are
+ * skipped, so a station list with missing geo data never throws.
+ */
+
 import type Station from "../stations/types";
 
 type Coordinates = readonly [longitude: number, latitude: number];
