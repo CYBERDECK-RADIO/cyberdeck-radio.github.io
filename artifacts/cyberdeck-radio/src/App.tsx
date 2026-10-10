@@ -21,6 +21,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createAudioController } from '@/audio/audio-controller';
 import Deck from '@/components/deck/Deck';
 import { ErrorBoundary } from '@/components/error-boundary';
+import SkinToggle from '@/components/SkinToggle';
 import StationFilters from '@/components/StationFilters';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -28,6 +29,7 @@ import NotFound from '@/pages/not-found';
 import { EMPTY_FILTERS, collectFilterOptions, filterStations, type StationFilters as StationFiltersState } from '@/stations/filter-stations';
 import { searchStations } from '@/stations/radio-browser';
 import { stationLocationLabel } from '@/stations/station-meta';
+import { useSkin } from '@/skin/use-skin';
 import type Station from '@/stations/types';
 import { ArrowDownRight, ArrowRight, AudioLines, Radio, Search, Signal, Waves } from 'lucide-react';
 import {
@@ -40,6 +42,7 @@ import {
 const queryClient = new QueryClient();
 
 function Home() {
+  const { skin, setSkin } = useSkin();
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [stations, setStations] = useState<Station[]>([]);
@@ -118,7 +121,7 @@ function Home() {
             <span className="brand-glyph"><Radio aria-hidden="true" /></span>
             <span>CYBERDECK <span style={{ color: '#d5b466' }}>RADIO</span></span>
           </div>
-          <div className="top-meta"><span className="live-led" /> GLOBAL FREQUENCY DIRECTORY <span>·</span> 01 / 01</div>
+          <div className="topline-right"><div className="top-meta"><span className="live-led" /> GLOBAL FREQUENCY DIRECTORY <span>·</span> 01 / 01</div><SkinToggle skin={skin} onChange={setSkin} /></div>
         </header>
 
         <section className="search-panel" aria-label="Station search">
