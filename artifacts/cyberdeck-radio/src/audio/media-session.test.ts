@@ -47,7 +47,7 @@ describe("toMediaMetadata", () => {
     expect(toMediaMetadata(station({ country: undefined, genres: [] }))).toEqual({
       title: "Night Drive FM",
       artist: "JP",
-      album: "CyberDeck Radio",
+      album: "Radio Atlas",
     });
     expect(toMediaMetadata(null)).toBeNull();
   });

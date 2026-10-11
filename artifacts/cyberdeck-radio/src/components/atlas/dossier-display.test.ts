@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PlaybackState } from "@/audio/audio-controller";
 import type Station from "@/stations/types";
-import { toDeckDisplay } from "./deck-display";
+import { toDossierDisplay } from "./dossier-display";
 
 function station(id: string): Station {
   return {
@@ -17,12 +17,13 @@ function state(overrides: PlaybackState): PlaybackState {
   return overrides;
 }
 
-describe("toDeckDisplay", () => {
+describe("toDossierDisplay", () => {
   it("maps idle to standby", () => {
-    expect(toDeckDisplay(state({ status: "idle" }))).toEqual({
+    expect(toDossierDisplay(state({ status: "idle" }))).toEqual({
       statusLabel: "STANDBY",
       statusTone: "idle",
       isTuning: false,
+      isSwitching: false,
       playingStationName: null,
     });
   });
@@ -30,10 +31,11 @@ describe("toDeckDisplay", () => {
   it("maps loading to tuning", () => {
     const target = station("loading");
 
-    expect(toDeckDisplay(state({ status: "loading", station: target, streamIndex: 0 }))).toEqual({
+    expect(toDossierDisplay(state({ status: "loading", station: target, streamIndex: 0 }))).toEqual({
       statusLabel: "TUNING",
       statusTone: "active",
       isTuning: true,
+      isSwitching: false,
       playingStationName: "Night Drive FM",
     });
   });
@@ -41,10 +43,11 @@ describe("toDeckDisplay", () => {
   it("maps playing to on air", () => {
     const target = station("playing");
 
-    expect(toDeckDisplay(state({ status: "playing", station: target, streamIndex: 0 }))).toEqual({
+    expect(toDossierDisplay(state({ status: "playing", station: target, streamIndex: 0 }))).toEqual({
       statusLabel: "ON AIR",
       statusTone: "active",
       isTuning: true,
+      isSwitching: false,
       playingStationName: "Night Drive FM",
     });
   });
@@ -52,10 +55,11 @@ describe("toDeckDisplay", () => {
   it("maps paused to paused", () => {
     const target = station("paused");
 
-    expect(toDeckDisplay(state({ status: "paused", station: target, streamIndex: 0 }))).toEqual({
+    expect(toDossierDisplay(state({ status: "paused", station: target, streamIndex: 0 }))).toEqual({
       statusLabel: "PAUSED",
       statusTone: "idle",
       isTuning: false,
+      isSwitching: false,
       playingStationName: "Night Drive FM",
     });
   });
@@ -64,11 +68,26 @@ describe("toDeckDisplay", () => {
     const target = station("error");
 
     expect(
-      toDeckDisplay(state({ status: "error", station: target, message: "boom" })),
+      toDossierDisplay(state({ status: "error", station: target, message: "boom" })),
     ).toEqual({
       statusLabel: "SIGNAL LOST",
       statusTone: "error",
       isTuning: false,
+      isSwitching: false,
+      playingStationName: "Night Drive FM",
+    });
+  });
+
+  it("labels a station migration as switching", () => {
+    const target = station("switching");
+
+    expect(
+      toDossierDisplay(state({ status: "loading", station: target, streamIndex: 0, switching: true })),
+    ).toEqual({
+      statusLabel: "SWITCHING",
+      statusTone: "active",
+      isTuning: true,
+      isSwitching: true,
       playingStationName: "Night Drive FM",
     });
   });
@@ -77,7 +96,7 @@ describe("toDeckDisplay", () => {
     const target = { ...station("unnamed"), name: "" };
 
     expect(
-      toDeckDisplay(state({ status: "playing", station: target, streamIndex: 0 }))
+      toDossierDisplay(state({ status: "playing", station: target, streamIndex: 0 }))
         .playingStationName,
     ).toBe("UNTITLED STATION");
   });

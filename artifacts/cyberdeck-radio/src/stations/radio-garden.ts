@@ -24,15 +24,21 @@
  */
 
 import type Station from "./types";
+import { stationMatchesQuery } from "./filter-stations";
 
 const DATA_URL = `${import.meta.env.BASE_URL}radio-garden.json`;
 const GZIP_DATA_URL = `${DATA_URL}.gz`;
-const BROWSE_LIMIT = 200;
-const SEARCH_LIMIT = 250;
 const REQUEST_TIMEOUT_MS = 12_000;
 const CACHE_TTL_MS = 10 * 60_000;
 
 type FetchOptions = { signal?: AbortSignal };
+
+export type GardenCatalogInfo = {
+  /** Channels the last crawl wrote into the catalog. */
+  count: number;
+  /** ISO timestamp of that crawl, when the payload carries one. */
+  generatedAt: string | null;
+};
 
 export async function fetchGardenStations({
   signal,
@@ -40,27 +46,33 @@ export async function fetchGardenStations({
   return getCachedStations(signal);
 }
 
+/**
+ * Nothing is capped here: the atlas clusters the catalog down to a few hundred
+ * markers and the directory pages through its rows, so every channel Radio
+ * Garden knows about stays reachable — browse and search alike.
+ */
 export function filterGardenStations(
   stations: Station[],
   query: string,
 ): Station[] {
   const cleanQuery = query.trim().toLowerCase();
-  if (!cleanQuery) return stations.slice(0, BROWSE_LIMIT);
+  if (!cleanQuery) return stations;
 
-  return stations
-    .filter((station) => {
-      const haystack = [station.name, station.country, ...station.genres]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(cleanQuery);
-    })
-    .slice(0, SEARCH_LIMIT);
+  return stations.filter((station) => stationMatchesQuery(station, cleanQuery));
+}
+
+let catalogInfo: GardenCatalogInfo | null = null;
+
+/** Freshness of the loaded crawl — rendered as the footer's catalog chip. */
+export function getGardenCatalogInfo(): GardenCatalogInfo | null {
+  return catalogInfo;
 }
 
 let cache: { at: number; stations: Station[] } | null = null;
 
 export function resetGardenStationsCache(): void {
   cache = null;
+  catalogInfo = null;
 }
 
 async function getCachedStations(signal?: AbortSignal): Promise<Station[]> {
@@ -101,6 +113,15 @@ async function requestStations(signal?: AbortSignal): Promise<Station[]> {
         "The Radio Garden catalog is malformed. Try again shortly.",
       );
     }
+
+    const generatedAt = isObject(payload) ? payload.generatedAt : undefined;
+    catalogInfo = {
+      count:
+        isObject(payload) && typeof payload.count === "number"
+          ? payload.count
+          : records.length,
+      generatedAt: typeof generatedAt === "string" ? generatedAt : null,
+    };
 
     return records
       .map(toStation)
@@ -218,6 +239,8 @@ function toStation(record: unknown): Station | null {
 
   const country = readString(record.country);
   const countryCode = readString(record.countryCode)?.toUpperCase();
+  const state = readString(record.state);
+  const city = readString(record.city);
   const coordinates = readCoordinates(record.coordinates);
 
   return {
@@ -227,6 +250,8 @@ function toStation(record: unknown): Station | null {
     streams,
     ...(country ? { country } : {}),
     ...(countryCode ? { countryCode } : {}),
+    ...(state ? { state } : {}),
+    ...(city ? { city } : {}),
     ...(coordinates ? { coordinates } : {}),
   };
 }

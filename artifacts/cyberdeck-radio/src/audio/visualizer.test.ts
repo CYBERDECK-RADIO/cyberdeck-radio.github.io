@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import type { AnalyserLike } from "./audio-controller";
 import {
+  analyserHasSignal,
+  createAnalyserSpectrum,
+  createCaptureAnalyser,
   createSimulatedSpectrum,
   resolveVisualizerMode,
 } from "./visualizer";
@@ -58,5 +62,41 @@ describe("resolveVisualizerMode", () => {
 
   it("reports analyser only when an analyser is actually connected", () => {
     expect(resolveVisualizerMode(true)).toBe("analyser");
+  });
+});
+
+describe("createAnalyserSpectrum", () => {
+  it("forwards the requested bar count to the analyser", () => {
+    const calls: number[] = [];
+    const analyser: AnalyserLike = {
+      getLevels: (bars) => {
+        calls.push(bars);
+        return new Array(bars).fill(0.5);
+      },
+    };
+    const spectrum = createAnalyserSpectrum(analyser, 16);
+
+    expect(spectrum()).toHaveLength(16);
+    expect(calls).toEqual([16]);
+  });
+});
+
+describe("analyserHasSignal", () => {
+  it("is false for a flat silent spectrum", () => {
+    expect(analyserHasSignal(new Array(12).fill(0))).toBe(false);
+    expect(analyserHasSignal(new Array(12).fill(0.01))).toBe(false);
+  });
+
+  it("is true once a bar crosses the threshold", () => {
+    const levels = new Array(12).fill(0);
+    levels[5] = 0.4;
+    expect(analyserHasSignal(levels)).toBe(true);
+  });
+});
+
+describe("createCaptureAnalyser", () => {
+  it("returns null when the environment cannot tap the media element", () => {
+    // jsdom exposes neither captureStream nor AudioContext.
+    expect(createCaptureAnalyser({} as never)).toBeNull();
   });
 });

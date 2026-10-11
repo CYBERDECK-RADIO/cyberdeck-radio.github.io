@@ -1,7 +1,7 @@
 /**
  * Station provider: searches radio-browser.info and normalizes its records.
  *
- *   query ──▶ 3 parallel category fetches (name / tag / country)
+ *   query ──▶ 4 parallel category fetches (name / tag / country / state)
  *          ──▶ normalizeStations ──▶ Station[] (deduped, capped)
  *
  *   startup ──▶ fetchTrendingStations (most-voted, geo-tagged)
@@ -12,12 +12,13 @@
  */
 
 import type Station from "./types";
+import { isSecureStreamUrl } from "./secure-stream";
 
 const API_ORIGIN = "https://de1.api.radio-browser.info";
-const SEARCH_LIMIT = 30;
-const TRENDING_LIMIT = 100;
+const SEARCH_LIMIT = 60;
+const TRENDING_LIMIT = 250;
 const REQUEST_TIMEOUT_MS = 12_000;
-const SEARCH_FIELDS = ["name", "tag", "country"] as const;
+const SEARCH_FIELDS = ["name", "tag", "country", "state"] as const;
 
 type SearchStationsInput = {
   query: string;
@@ -42,6 +43,7 @@ export async function searchStations({
     url.searchParams.set(field, cleanQuery);
     url.searchParams.set("limit", String(SEARCH_LIMIT));
     url.searchParams.set("hidebroken", "true");
+    url.searchParams.set("is_https", "true");
     return url;
   });
 
@@ -61,6 +63,7 @@ export async function fetchTrendingStations({
   url.searchParams.set("reverse", "true");
   url.searchParams.set("limit", String(TRENDING_LIMIT));
   url.searchParams.set("hidebroken", "true");
+  url.searchParams.set("is_https", "true");
   url.searchParams.set("has_geo_info", "true");
 
   const [records] = await requestAll([url], signal);
@@ -149,14 +152,23 @@ function normalizeStations(records: unknown[]): Station[] {
 
     const id = readString(value.stationuuid);
     const name = readString(value.name);
-    const streamUrl =
-      readWebUrl(value.url_resolved) ?? readWebUrl(value.url);
+
+    // Prefer an https stream from either the resolved or the original URL; a
+    // station with no https candidate cannot be played on this HTTPS page, so
+    // it is dropped entirely instead of surfacing a "no secure stream" error.
+    const resolvedUrl = readWebUrl(value.url_resolved);
+    const originalUrl = readWebUrl(value.url);
+    const candidates = [resolvedUrl, originalUrl].filter(
+      (candidate): candidate is string => candidate !== undefined,
+    );
+    const streamUrl = candidates.find(isSecureStreamUrl);
 
     if (!id || !name || !streamUrl || seenIds.has(id)) continue;
     seenIds.add(id);
 
     const countryCode = readString(value.countrycode)?.toUpperCase();
     const country = readString(value.country);
+    const state = readString(value.state);
     const homepage = readWebUrl(value.homepage);
     const codec = readString(value.codec);
     const bitrate = readPositiveNumber(value.bitrate);
@@ -176,6 +188,7 @@ function normalizeStations(records: unknown[]): Station[] {
       checkUrl: healthCheckUrl(id),
       ...(countryCode ? { countryCode } : {}),
       ...(country ? { country } : {}),
+      ...(state ? { state } : {}),
       ...(coordinates ? { coordinates } : {}),
       ...(homepage ? { homepage } : {}),
     });

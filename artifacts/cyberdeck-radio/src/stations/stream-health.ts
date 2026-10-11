@@ -3,9 +3,10 @@
  * to React through a stable subscription-friendly snapshot.
  *
  *   stations ──▶ registerStations ──▶ worker 'set'
- *   worker 'health' ──▶ apply (batched) ──▶ listeners ──▶ useStationHealth
+ *   worker 'health' ──▶ applyHealth ──▶ quarantine + status listeners
  */
 
+import { quarantineChannel, restoreChannel } from "./stream-quarantine";
 import type Station from "./types";
 import type { HealthStatus } from "./stream-health-logic";
 
@@ -37,7 +38,7 @@ function ensureWorker(): Worker | null {
     instance.onmessage = (event) => {
       const message = event.data as { type?: string; id?: string; status?: HealthStatus };
       if (message?.type !== "health" || typeof message.id !== "string") return;
-      setHealth(message.id, message.status ?? "unknown");
+      applyHealth(message.id, message.status ?? "unknown");
     };
     worker = instance;
   } catch {
@@ -51,8 +52,23 @@ export function registerStations(stations: Station[]): void {
   if (!instance) return;
   instance.postMessage({
     type: "set",
-    stations: stations.map((station) => ({ id: station.id, checkUrl: station.checkUrl })),
+    stations: stations.map((station) => ({
+      id: station.id,
+      checkUrl: station.checkUrl,
+      streamUrls: station.streams.map((stream) => stream.url),
+    })),
   });
+}
+
+/**
+ * Folds one worker verdict into the status map. A confirmed-offline channel is
+ * also quarantined into the local cache (hidden from the directory and map);
+ * a live verdict restores it, so the slow re-probe cycle needs no extra wiring.
+ */
+export function applyHealth(id: string, status: HealthStatus): void {
+  if (status === "offline") quarantineChannel(id);
+  else if (status === "live") restoreChannel(id);
+  setHealth(id, status);
 }
 
 function setHealth(id: string, status: HealthStatus): void {

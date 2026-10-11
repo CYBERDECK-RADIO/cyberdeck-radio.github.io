@@ -30,6 +30,7 @@ const catalog = {
       name: "Jazz Con Class Radio",
       country: "United States",
       countryCode: "US",
+      city: "New York",
       coordinates: [-73.98, 40.75],
       genres: [],
       streams: [
@@ -42,6 +43,7 @@ const catalog = {
       name: "Jazz Radio",
       country: "France",
       countryCode: "FR",
+      city: "Lyon",
       coordinates: [4.83, 45.75],
       genres: ["jazz"],
       streams: [{ url: "https://stream.example/fr" }],
@@ -69,6 +71,7 @@ describe("Radio Garden source", () => {
         name: "Jazz Con Class Radio",
         country: "United States",
         countryCode: "US",
+        city: "New York",
         coordinates: [-73.98, 40.75],
         genres: [],
         streams: [
@@ -81,6 +84,7 @@ describe("Radio Garden source", () => {
         name: "Jazz Radio",
         country: "France",
         countryCode: "FR",
+        city: "Lyon",
         coordinates: [4.83, 45.75],
         genres: ["jazz"],
         streams: [{ url: "https://stream.example/fr" }],
@@ -139,7 +143,7 @@ describe("Radio Garden source", () => {
     expect(stations[0].streams).toEqual([{ url: "https://same.example/stream" }]);
   });
 
-  it("filters client-side by name, country, or genre", async () => {
+  it("filters client-side by name, country, city, or genre", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(makeResponse(catalog))));
     const stations = await fetchGardenStations();
 
@@ -149,6 +153,12 @@ describe("Radio Garden source", () => {
     expect(filterGardenStations(stations, "france").map((s) => s.id)).toEqual([
       "garden:def456",
     ]);
+    expect(filterGardenStations(stations, "lyon").map((s) => s.id)).toEqual([
+      "garden:def456",
+    ]);
+    expect(filterGardenStations(stations, "jazz new york").map((s) => s.id)).toEqual([
+      "garden:abc123",
+    ]);
     expect(filterGardenStations(stations, "JAZZ").map((s) => s.id)).toEqual([
       "garden:abc123",
       "garden:def456",
@@ -157,7 +167,7 @@ describe("Radio Garden source", () => {
     expect(filterGardenStations(stations, "nope")).toHaveLength(0);
   });
 
-  it("caps the browse list and search results", async () => {
+  it("keeps the whole catalog reachable for browse and search alike", async () => {
     const many = Array.from({ length: 260 }, (_, index) => ({
       id: `garden:s${index}`,
       name: `Station ${index}`,
@@ -166,8 +176,9 @@ describe("Radio Garden source", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(makeResponse({ stations: many }))));
     const stations = await fetchGardenStations();
 
-    expect(filterGardenStations(stations, "")).toHaveLength(200);
-    expect(filterGardenStations(stations, "station")).toHaveLength(250);
+    // The shell pages the directory and clusters the atlas instead.
+    expect(filterGardenStations(stations, "")).toHaveLength(260);
+    expect(filterGardenStations(stations, "station")).toHaveLength(260);
   });
 
   it("treats a missing catalog as empty", async () => {

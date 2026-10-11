@@ -13,6 +13,10 @@ type Station = {
   name: string;
   countryCode?: string;
   country?: string;
+  /** Region/state as published by the provider ("Bayern", "New York NY"). */
+  state?: string;
+  /** City (or place) the broadcast originates from, when the catalog knows it. */
+  city?: string;
   genres: string[];
   coordinates?: [longitude: number, latitude: number];
   streams: Array<{

@@ -20,7 +20,7 @@ import type Station from "../stations/types";
 
 export type PlaybackState =
   | { status: "idle" }
-  | { status: "loading"; station: Station; streamIndex: number }
+  | { status: "loading"; station: Station; streamIndex: number; switching?: boolean }
   | { status: "playing"; station: Station; streamIndex: number }
   | { status: "paused"; station: Station; streamIndex: number }
   | { status: "error"; station: Station; message: string };
@@ -35,11 +35,27 @@ export type MediaElementLike = {
   removeEventListener(type: string, listener: () => void): void;
 };
 
+/**
+ * A live spectrum tap on the playing element. The controller only asks the
+ * factory once, on the first confirmed "playing" event, so the analyser can be
+ * built against a media element that already has audio flowing.
+ */
+export type AnalyserLike = {
+  getLevels(bars: number): number[];
+  resume?(): void;
+  dispose?(): void;
+};
+
 export type AudioControllerOptions = {
   /** Media element factory; defaults to a fresh HTMLAudioElement in the browser. */
   createMedia?: () => MediaElementLike;
   /** When true, only https: stream URLs are attempted. Defaults to true on an HTTPS page. */
   requireHttps?: boolean;
+  /**
+   * Optional analyser factory. Returns null when the browser or stream cannot
+   * safely be tapped, in which case the visualizer stays simulated.
+   */
+  createAnalyser?: (media: MediaElementLike) => AnalyserLike | null;
 };
 
 export interface AudioController {
@@ -49,6 +65,8 @@ export interface AudioController {
   pause(): void;
   stop(): void;
   setVolume(value: number): void;
+  /** The live analyser, once playback has started and a tap succeeded. */
+  getAnalyser(): AnalyserLike | null;
   dispose(): void;
 }
 
@@ -96,6 +114,8 @@ export function createAudioController(
   let attemptToken = 0;
   let detachMediaListeners: (() => void) | null = null;
   let disposed = false;
+  let analyser: AnalyserLike | null = null;
+  let analyserRequested = false;
 
   function notify(next: PlaybackState): void {
     state = next;
@@ -107,24 +127,40 @@ export function createAudioController(
     detachMediaListeners = null;
   }
 
+  // Builds the analyser exactly once, on the first confirmed playback, so the
+  // media element already has audio. Failures are swallowed: no tap, no analyser.
+  function ensureAnalyser(): void {
+    if (analyserRequested) return;
+    analyserRequested = true;
+    if (!options.createAnalyser) return;
+    try {
+      analyser = options.createAnalyser(media) ?? null;
+    } catch {
+      analyser = null;
+    }
+    analyser?.resume?.();
+  }
+
   // Starts one candidate attempt. Resolves when play() settles so autoplay
   // rejection is observable; stream failures arrive later via the error event.
   function beginAttempt(
     station: Station,
     urls: string[],
     index: number,
+    switching = false,
   ): Promise<void> {
     detach();
     const token = ++attemptToken;
 
     const handlePlaying = () => {
       if (token !== attemptToken) return;
+      ensureAnalyser();
       notify({ status: "playing", station, streamIndex: index });
     };
     const handleError = () => {
       if (token !== attemptToken) return;
       if (index + 1 < urls.length) {
-        void beginAttempt(station, urls, index + 1);
+        void beginAttempt(station, urls, index + 1, switching);
         return;
       }
       detach();
@@ -138,11 +174,15 @@ export function createAudioController(
       media.removeEventListener("error", handleError);
     };
 
-    notify({ status: "loading", station, streamIndex: index });
+    notify(
+      switching
+        ? { status: "loading", station, streamIndex: index, switching: true }
+        : { status: "loading", station, streamIndex: index },
+    );
     media.src = urls[index];
     media.load();
 
-    return media.play().catch((error: unknown) => {
+    return Promise.resolve(media.play()).catch((error: unknown) => {
       if (token !== attemptToken) return;
       detach();
       notify({ status: "error", station, message: describePlayError(error) });
@@ -154,6 +194,7 @@ export function createAudioController(
 
     if (state.status === "paused" && state.station.id === station.id) {
       const token = attemptToken;
+      analyser?.resume?.();
       try {
         await media.play();
       } catch (error) {
@@ -173,7 +214,12 @@ export function createAudioController(
       return;
     }
 
-    await beginAttempt(station, urls, 0);
+    // Migrating from one station to another mid-playback is surfaced so the deck
+    // can label the transition instead of flashing the plain "TUNING" state.
+    const switching =
+      state.status !== "idle" && state.station.id !== station.id;
+
+    await beginAttempt(station, urls, 0, switching);
   }
 
   return {
@@ -210,6 +256,10 @@ export function createAudioController(
       media.volume = Math.min(1, Math.max(0, value));
     },
 
+    getAnalyser(): AnalyserLike | null {
+      return analyser;
+    },
+
     dispose(): void {
       if (disposed) return;
       disposed = true;
@@ -217,6 +267,12 @@ export function createAudioController(
       detach();
       media.pause();
       media.src = "";
+      try {
+        analyser?.dispose?.();
+      } catch {
+        // Best-effort teardown; a closed context must never block disposal.
+      }
+      analyser = null;
       listeners.clear();
       state = { status: "idle" };
     },

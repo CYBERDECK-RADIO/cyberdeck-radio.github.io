@@ -19,6 +19,7 @@
  *   RG_CONCURRENCY        parallel requests (default 8)
  *   RG_PLACES_LIMIT       scrape only the first N places (default 0 = all)
  *   RG_RESOLVE_STREAMS    1/0: follow the listen redirect to a direct URL
+ *                         (default 0 — opt-in; ~38k HEADs cost ~20 minutes)
  *   RG_REQUEST_TIMEOUT_MS per-request timeout (default 20000)
  *   RG_RETRIES            attempts per request (default 3)
  *   RG_OUT                output path (default public/radio-garden.json)
@@ -42,7 +43,7 @@ const DEFAULT_OUT = path.resolve(
 
 const CONCURRENCY = readInt("RG_CONCURRENCY", 8, 1);
 const PLACES_LIMIT = readInt("RG_PLACES_LIMIT", 0, 0);
-const RESOLVE_STREAMS = readFlag("RG_RESOLVE_STREAMS", true);
+const RESOLVE_STREAMS = readFlag("RG_RESOLVE_STREAMS", false);
 const REQUEST_TIMEOUT_MS = readInt("RG_REQUEST_TIMEOUT_MS", 20_000, 1_000);
 const RETRIES = readInt("RG_RETRIES", 3, 1);
 const OUT_PATH = process.env.RG_OUT?.trim() || DEFAULT_OUT;
@@ -61,6 +62,8 @@ type OutputStation = {
   name: string;
   country?: string;
   countryCode?: string;
+  /** Radio Garden "place" title — the city (or locality) the channels sit in. */
+  city?: string;
   coordinates?: [number, number];
   genres: string[];
   streams: OutputStream[];
@@ -231,6 +234,7 @@ function toStation(id: string, ref: ChannelRef, place: Place): OutputStation {
     streams: [{ url: listenUrl }],
     ...(country ? { country } : {}),
     ...(country ? countryCodeFor(country) : {}),
+    ...(place.title ? { city: place.title } : {}),
     ...(place.geo ? { coordinates: place.geo } : {}),
   };
 }

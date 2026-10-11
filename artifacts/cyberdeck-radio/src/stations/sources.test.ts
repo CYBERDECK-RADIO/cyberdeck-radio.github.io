@@ -41,8 +41,9 @@ describe("station sources", () => {
     const urls = fetchMock.mock.calls.map(
       ([requestUrl]: [URL]) => new URL(requestUrl.toString()).searchParams,
     );
-    expect(urls.length).toBe(3);
+    expect(urls.length).toBe(4);
     expect(urls.some((params) => params.get("name") === "jazz")).toBe(true);
+    expect(urls.some((params) => params.get("state") === "jazz")).toBe(true);
   });
 
   it("serves the soma catalog when no query is given", async () => {

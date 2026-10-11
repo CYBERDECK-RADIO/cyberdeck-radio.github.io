@@ -45,7 +45,7 @@ export function toMediaMetadata(station: Station | null): MediaMetadataLike | nu
   return {
     title: station.name || "Untitled station",
     artist: region,
-    album: station.genres.length ? station.genres.join(" · ") : "CyberDeck Radio",
+    album: station.genres.length ? station.genres.join(" · ") : "Radio Atlas",
   };
 }
 

@@ -24,6 +24,7 @@ describe("searchStations", () => {
           url_resolved: "https://stream.example/live.mp3",
           country: "Japan",
           countrycode: "jp",
+          state: "Tokyo",
           tags: "synthwave, electronic, night drive",
           codec: "MP3",
           bitrate: 192,
@@ -43,6 +44,7 @@ describe("searchStations", () => {
         name: "Night Drive FM",
         countryCode: "JP",
         country: "Japan",
+        state: "Tokyo",
         genres: ["synthwave", "electronic", "night drive"],
         coordinates: [139.69, 35.68],
         streams: [
@@ -124,6 +126,35 @@ describe("searchStations", () => {
     expect(stations[0]?.name).toBe("First copy");
   });
 
+   it("drops stations whose only streams are insecure (http)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        makeResponse([
+          {
+            stationuuid: "http-only",
+            name: "Legacy Shoutcast",
+            url: "http://legacy.example/live",
+            url_resolved: "http://legacy.example/live",
+            tags: "oldies",
+          },
+          {
+            stationuuid: "https-ok",
+            name: "Modern Stream",
+            url: "http://modern.example/live",
+            url_resolved: "https://modern.example/live",
+            tags: "oldies",
+          },
+        ]),
+      ),
+    );
+
+    const stations = await searchStations({ query: "oldies" });
+
+    expect(stations.map((station) => station.id)).toEqual(["https-ok"]);
+    expect(stations[0]?.streams).toEqual([{ url: "https://modern.example/live" }]);
+  });
+
   it("avoids a request for a blank query", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -164,13 +195,14 @@ describe("searchStations", () => {
       signal: controller.signal,
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     for (const [requestUrl, requestOptions] of fetchMock.mock.calls) {
       const url = new URL(requestUrl.toString());
       expect(url.hostname).toBe("de1.api.radio-browser.info");
       expect(url.pathname).toBe("/json/stations/search");
-      expect(url.searchParams.get("limit")).toBe("30");
+      expect(url.searchParams.get("limit")).toBe("60");
       expect(url.searchParams.get("hidebroken")).toBe("true");
+      expect(url.searchParams.get("is_https")).toBe("true");
       expect(requestOptions.signal).toBeInstanceOf(AbortSignal);
     }
     const requestParams = fetchMock.mock.calls.map(
@@ -179,24 +211,29 @@ describe("searchStations", () => {
     expect(requestParams.map((params) => params.get("name"))).toContain("jazz");
     expect(requestParams.map((params) => params.get("tag"))).toContain("jazz");
     expect(requestParams.map((params) => params.get("country"))).toContain("jazz");
+    expect(requestParams.map((params) => params.get("state"))).toContain("jazz");
 
     controller.abort();
     await expect(pendingSearch).rejects.toMatchObject({ name: "AbortError" });
   });
 
-  it("searches station names, genres, and countries, merging duplicate station IDs", async () => {
+  it("searches station names, genres, countries, and regions, merging duplicate station IDs", async () => {
     const fetchMock = vi.fn((requestUrl: URL) => {
       const params = requestUrl.searchParams;
       const id = params.has("name")
         ? "station-name"
         : params.has("tag")
           ? "station-genre"
-          : "station-country";
+          : params.has("country")
+            ? "station-country"
+            : "station-state";
       const name = params.has("name")
         ? "Jazz FM"
         : params.has("tag")
           ? "Night Lounge"
-          : "Japan Jazz";
+          : params.has("country")
+            ? "Japan Jazz"
+            : "Bavaria Jazz";
 
       return Promise.resolve(
         makeResponse([
@@ -219,11 +256,12 @@ describe("searchStations", () => {
 
     const stations = await searchStations({ query: "jazz" });
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(stations.map((station) => station.id)).toEqual([
       "station-name",
       "station-genre",
       "station-country",
+      "station-state",
     ]);
   });
 });
@@ -259,8 +297,9 @@ describe("fetchTrendingStations", () => {
     expect(url.searchParams.get("order")).toBe("votes");
     expect(url.searchParams.get("reverse")).toBe("true");
     expect(url.searchParams.get("hidebroken")).toBe("true");
+    expect(url.searchParams.get("is_https")).toBe("true");
     expect(url.searchParams.get("has_geo_info")).toBe("true");
-    expect(url.searchParams.get("limit")).toBe("100");
+    expect(url.searchParams.get("limit")).toBe("250");
     expect(stations).toHaveLength(1);
     expect(stations[0]).toMatchObject({
       id: "trend-1",

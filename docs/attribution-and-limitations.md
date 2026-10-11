@@ -8,15 +8,25 @@ streams that browsers refuse to play.
 
 | Source | Used for | Link |
 | --- | --- | --- |
-| radio-browser.info | Station directory search (name, country, genre) | https://www.radio-browser.info/ |
+| radio.garden | The station directory and map pins (baked at build time) | https://radio.garden/ |
+| radio-browser.info | Optional AIRWAVES source: live directory search | https://www.radio-browser.info/ |
 | Natural Earth | Country outlines drawn on the receiver map | https://www.naturalearthdata.com/ |
-| MapLibre GL JS | Map rendering (open-source, BSD-3-Clause) | https://maplibre.org/ |
+| Paper Shaders | Decorative WebGL mesh-gradient backdrop (Apache-2.0; attribution not required, credited here) | https://shaders.paper.design/ |
 
-The station directory is queried live from the public radio-browser.info API
-(`https://de1.api.radio-browser.info`). CyberDeck Radio does not host, proxy, or
-re-broadcast any audio; playback connects the browser directly to each station's
-own stream URL. The footer links back to radio-browser.info as its API terms
-request.
+The default directory ships with the app. radio.garden's JSON API is CORS-locked
+to its own origin, so a scheduled GitHub Action crawls it in Node and bakes every
+place and channel (~38k, with coordinates and the station's stable HTTPS listen
+URL) into `public/radio-garden.json`, also published gzipped. The AIRWAVES source
+still queries the public radio-browser.info API live
+(`https://de1.api.radio-browser.info`), and the footer credits whichever source
+is active. CyberDeck Radio does not host, proxy, or re-broadcast any audio;
+playback connects the browser directly to the station's own stream URL — for the
+baked catalog that is radio.garden's `channel.mp3` listen endpoint, which
+redirects to the broadcaster's stream. The map itself is hand-rolled SVG over the
+bundled Natural Earth outlines; no tile server or API key is required. A
+decorative WebGL backdrop (Paper Shaders, Apache-2.0) renders a themed
+mesh-gradient sky behind the map — purely atmospheric, with no bearing on
+search, selection, or playback.
 
 ## Known limitations
 
@@ -46,13 +56,19 @@ request.
   geo-restricted (see above). Pick a different station.
 - **The spectrum never moves with the music.** Expected: it is simulated. See
   "The visualizer is simulated" above.
-- **The map is blank.** The map falls back to a flat list when WebGL is
-  unavailable; search, selection, and playback keep working.
+- **The map falls back to a flat list only if it cannot render.** The world is
+  plain SVG; the only WebGL piece is the decorative backdrop, which silently
+  disables itself when WebGL2 is unavailable and freezes to a static frame
+  under `prefers-reduced-motion`. Search, selection, and playback keep
+  working either way.
 
 ## Privacy and scope confirmation
 
 - **No telemetry or analytics.** The app ships no analytics, tracking, or
-  third-party scripts beyond the map library and the station API it calls.
+  third-party scripts. Every map path, the station catalog, and the SomaFM
+  lineup ship in the bundle or as same-origin static files; the only live
+  network calls are the stream audio itself and the optional AIRWAVES source's
+  radio-browser.info requests.
 - **No PWA or service worker.** There is no `manifest`, no service worker, and
   no install prompt.
 - **No offline-stream claims.** Playback always requires a live network

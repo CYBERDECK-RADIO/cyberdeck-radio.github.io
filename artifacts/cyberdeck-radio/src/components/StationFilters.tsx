@@ -1,35 +1,86 @@
 /**
- * Country/genre filter controls for the station results.
+ * Faceted filter + sort controls for the station results.
  *
- *   countries + genres ──▶ two <select>s (with an "all" option)
- *   user picks ──▶ onCountryChange / onGenreChange (null = cleared)
- *   any filter active ──▶ clear control ──▶ onClear
+ *   option lists + active filters ──▶ cascading <select>s (country → region →
+ *     city → genre → codec, each with an "all" option)
+ *   user picks ──▶ onFilterChange(facet, value) (null = cleared)
+ *   sort       ──▶ onSortChange
+ *   anything active ──▶ clear control ──▶ onClear
  *
  * Presentational only: it renders the options it is given and reports intent.
+ * A facet stays visible (and pins its own current value) while it is active so
+ * a selection can always be seen and cleared.
  */
 
+import {
+  SORT_LABELS,
+  STATION_SORTS,
+  hasActiveFilters,
+  type StationFilterOptions,
+  type StationFilters,
+  type StationSort,
+} from "@/stations/filter-stations";
 import { SlidersHorizontal, X } from "lucide-react";
 
 type StationFiltersProps = {
-  countries: string[];
-  genres: string[];
-  country: string | null;
-  genre: string | null;
-  onCountryChange: (value: string | null) => void;
-  onGenreChange: (value: string | null) => void;
+  options: StationFilterOptions;
+  filters: StationFilters;
+  sort: StationSort;
+  onFilterChange: (facet: keyof StationFilters, value: string | null) => void;
+  onSortChange: (sort: StationSort) => void;
   onClear: () => void;
 };
 
+type FacetSelectProps = {
+  testId: string;
+  label: string;
+  allLabel: string;
+  values: string[];
+  active: string | null;
+  onChange: (value: string | null) => void;
+};
+
+function FacetSelect({
+  testId,
+  label,
+  allLabel,
+  values,
+  active,
+  onChange,
+}: FacetSelectProps) {
+  const entries =
+    active !== null && !values.includes(active) ? [active, ...values] : values;
+  if (entries.length === 0) return null;
+
+  return (
+    <label className="station-filters__field">
+      <span className="sr-only">{label}</span>
+      <select
+        value={active ?? ""}
+        onChange={(event) => onChange(event.target.value || null)}
+        aria-label={label}
+        data-testid={testId}
+      >
+        <option value="">{allLabel}</option>
+        {entries.map((value) => (
+          <option key={value} value={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export default function StationFilters({
-  countries,
-  genres,
-  country,
-  genre,
-  onCountryChange,
-  onGenreChange,
+  options,
+  filters,
+  sort,
+  onFilterChange,
+  onSortChange,
   onClear,
 }: StationFiltersProps) {
-  const hasActiveFilter = country !== null || genre !== null;
+  const dirty = hasActiveFilters(filters) || sort !== "relevance";
 
   return (
     <div className="station-filters" data-testid="station-filters">
@@ -37,39 +88,62 @@ export default function StationFilters({
         <SlidersHorizontal aria-hidden="true" />
         Filter
       </span>
-      {countries.length > 0 && (
-        <label className="station-filters__field">
-          <span className="sr-only">Filter by country</span>
-          <select
-            value={country ?? ""}
-            onChange={(event) => onCountryChange(event.target.value || null)}
-            data-testid="filter-country"
-          >
-            <option value="">All countries</option>
-            {countries.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      <FacetSelect
+        testId="filter-country"
+        label="Filter by country"
+        allLabel="All countries"
+        values={options.countries}
+        active={filters.country}
+        onChange={(value) => onFilterChange("country", value)}
+      />
+      <FacetSelect
+        testId="filter-state"
+        label="Filter by region"
+        allLabel="All regions"
+        values={options.states}
+        active={filters.state}
+        onChange={(value) => onFilterChange("state", value)}
+      />
+      <FacetSelect
+        testId="filter-city"
+        label="Filter by city"
+        allLabel="All cities"
+        values={options.cities}
+        active={filters.city}
+        onChange={(value) => onFilterChange("city", value)}
+      />
+      <FacetSelect
+        testId="filter-genre"
+        label="Filter by genre"
+        allLabel="All genres"
+        values={options.genres}
+        active={filters.genre}
+        onChange={(value) => onFilterChange("genre", value)}
+      />
+      <FacetSelect
+        testId="filter-codec"
+        label="Filter by codec"
+        allLabel="All codecs"
+        values={options.codecs}
+        active={filters.codec}
+        onChange={(value) => onFilterChange("codec", value)}
+      />
       <label className="station-filters__field">
-        <span className="sr-only">Filter by genre</span>
+        <span className="sr-only">Sort results</span>
         <select
-          value={genre ?? ""}
-          onChange={(event) => onGenreChange(event.target.value || null)}
-          data-testid="filter-genre"
+          value={sort}
+          onChange={(event) => onSortChange(event.target.value as StationSort)}
+          aria-label="Sort results"
+          data-testid="filter-sort"
         >
-          <option value="">All genres</option>
-          {genres.map((value) => (
+          {STATION_SORTS.map((value) => (
             <option key={value} value={value}>
-              {value}
+              {value === "relevance" ? "Sort: Featured" : SORT_LABELS[value]}
             </option>
           ))}
         </select>
       </label>
-      {hasActiveFilter && (
+      {dirty && (
         <button
           type="button"
           className="station-filters__clear"

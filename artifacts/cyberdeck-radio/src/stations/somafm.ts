@@ -11,6 +11,7 @@
  */
 
 import type Station from "./types";
+import { stationMatchesQuery } from "./filter-stations";
 
 const CHANNELS_ORIGIN = "https://somafm.com";
 const CHANNELS_URL = `${CHANNELS_ORIGIN}/channels.json`;
@@ -40,15 +41,8 @@ export function filterSomaChannels(
   channels: Station[],
   query: string,
 ): Station[] {
-  const cleanQuery = query.trim().toLowerCase();
-  if (!cleanQuery) return channels;
-
-  return channels.filter((station) => {
-    const haystack = [station.name, station.homepage, ...station.genres]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(cleanQuery);
-  });
+  if (!query.trim()) return channels;
+  return channels.filter((station) => stationMatchesQuery(station, query));
 }
 
 function toStation(record: SomaRecord): Station | null {

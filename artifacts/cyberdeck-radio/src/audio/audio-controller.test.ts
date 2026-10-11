@@ -231,6 +231,7 @@ describe("createAudioController", () => {
       status: "loading",
       station: second,
       streamIndex: 0,
+      switching: true,
     });
 
     for (const listener of staleListeners) listener();
@@ -239,6 +240,7 @@ describe("createAudioController", () => {
       status: "loading",
       station: second,
       streamIndex: 0,
+      switching: true,
     });
 
     media.emit("playing");
@@ -247,6 +249,73 @@ describe("createAudioController", () => {
       station: second,
       streamIndex: 0,
     });
+  });
+
+  it("flags a station migration as switching while a different station plays", async () => {
+    const media = new FakeMedia();
+    const { controller, states } = makeController(media);
+    const first = station("first", ["https://first.example/live"]);
+    const second = station("second", ["https://second.example/live"]);
+
+    await controller.play(first);
+    media.emit("playing");
+
+    await controller.play(second);
+
+    expect(controller.getState()).toEqual({
+      status: "loading",
+      station: second,
+      streamIndex: 0,
+      switching: true,
+    });
+    expect(states.at(-1)).toMatchObject({ status: "loading", switching: true });
+  });
+
+  it("does not flag a fresh play from idle as switching", async () => {
+    const media = new FakeMedia();
+    const { controller } = makeController(media);
+    const target = station("cold", ["https://cold.example/live"]);
+
+    await controller.play(target);
+
+    expect(controller.getState()).toEqual({
+      status: "loading",
+      station: target,
+      streamIndex: 0,
+    });
+  });
+
+  it("builds the analyser once on first playback and disposes it", async () => {
+    const media = new FakeMedia();
+    let created = 0;
+    let disposed = 0;
+    const analyser = {
+      getLevels: (bars: number) => new Array(bars).fill(0),
+      dispose: () => {
+        disposed += 1;
+      },
+    };
+    const controller = createAudioController({
+      createMedia: () => media,
+      requireHttps: true,
+      createAnalyser: () => {
+        created += 1;
+        return analyser;
+      },
+    });
+
+    expect(controller.getAnalyser()).toBeNull();
+
+    await controller.play(station("tuned", ["https://tuned.example/live"]));
+    media.emit("playing");
+    expect(controller.getAnalyser()).toBe(analyser);
+
+    await controller.play(station("next", ["https://next.example/live"]));
+    media.emit("playing");
+    expect(created).toBe(1);
+
+    controller.dispose();
+    expect(disposed).toBe(1);
   });
 
   it("pauses the active stream and resumes the same station without reloading", async () => {

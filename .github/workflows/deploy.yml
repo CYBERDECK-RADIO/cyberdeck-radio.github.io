@@ -1,9 +1,9 @@
 # Build the static CyberDeck Radio app and publish it to GitHub Pages.
 #
-#   push to main ──▶ install ──▶ [scrape radio.garden] ──▶ vite build ──▶ dist/public
-#   schedule (daily) ──▶  ...same pipeline, always with a fresh catalog...  │
-#                        │                                                 │
-#                        └────────────── upload-pages-artifact ◀───────────┘
+#   push to main ──▶ install ──▶ [scrape radio.garden] ──▶ gzip + verify ──▶ vite build ──▶ dist/public
+#   schedule (daily) ──▶  ...same pipeline, always with a fresh catalog...                        │
+#                        │                                                                        │
+#                        └────────────── upload-pages-artifact ◀──────────────────────────────────┘
 #                                                  │
 #                                                  ▼
 #                                          deploy-pages ──▶ GitHub Pages
@@ -15,6 +15,15 @@
 # build. The result is cached per-day so ordinary pushes skip the crawl and only
 # the scheduled run pays for it. The ~10 MB catalog is also gzipped so the app
 # transports ~1 MB over the wire (the adapter decompresses it in-browser).
+#
+# Catalog lifecycle:
+#   cache hit  ──▶ reuse today's catalog, skip the crawl
+#   cache miss ──▶ crawl (continue-on-error), else fall back to the newest
+#                  cached catalog restored by restore-keys (may be stale)
+#   verify     ──▶ fail the deploy when no catalog exists at all; warn when
+#                  the fallback is older than a fortnight
+#   artifact   ──▶ the exact catalog shipped by this run is archived, so a
+#                  regression can be diffed against what went live
 
 name: Deploy to GitHub Pages
 
@@ -26,6 +35,11 @@ on:
     # Daily at 04:23 UTC — refresh the Radio Garden catalog.
     - cron: "23 4 * * *"
   workflow_dispatch:
+    inputs:
+      force_scrape:
+        description: "Re-crawl Radio Garden even if today's catalog is cached"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -73,13 +87,60 @@ jobs:
             radio-garden-data-
 
       - name: Scrape Radio Garden
-        if: steps.radio-garden-cache.outputs.cache-hit != 'true'
+        if: steps.radio-garden-cache.outputs.cache-hit != 'true' || inputs.force_scrape == true
         continue-on-error: true
+        timeout-minutes: 90
         run: pnpm --filter @workspace/scripts run scrape:radio-garden
 
       - name: Compress Radio Garden catalog
-        run: gzip -k -9 -f artifacts/cyberdeck-radio/public/radio-garden.json
-        continue-on-error: true
+        run: |
+          file=artifacts/cyberdeck-radio/public/radio-garden.json
+          if [ -s "$file" ]; then
+            gzip -k -9 -f "$file"
+          else
+            echo "::notice::No catalog yet — nothing to compress."
+          fi
+
+      - name: Verify Radio Garden catalog
+        run: |
+          file=artifacts/cyberdeck-radio/public/radio-garden.json
+          if [ ! -s "$file" ]; then
+            echo "::error::No Radio Garden catalog. The cache missed and the crawl failed, so the deploy would ship an empty directory."
+            exit 1
+          fi
+          node -e '
+            const fs = require("fs");
+            const file = process.argv[1];
+            const data = JSON.parse(fs.readFileSync(file, "utf8"));
+            const count = Number(data.count) || data.stations?.length || 0;
+            const generated = data.generatedAt ? new Date(data.generatedAt) : null;
+            const ageDays = generated && !Number.isNaN(generated.valueOf())
+              ? (Date.now() - generated.valueOf()) / 86400000
+              : Number.POSITIVE_INFINITY;
+            if (!count) {
+              console.error(`::error::Catalog ${file} parsed but holds no stations.`);
+              process.exit(1);
+            }
+            if (ageDays > 14) {
+              console.error(`::warning::Catalog is ${ageDays.toFixed(1)} days old — today's crawl did not land.`);
+            }
+            const gz = `${file}.gz`;
+            const mb = (bytes) => (bytes / 1e6).toFixed(1);
+            console.log(
+              `Catalog: ${count} stations, generated ${data.generatedAt ?? "unknown"}, ` +
+              `${mb(fs.statSync(file).size)} MB${fs.existsSync(gz) ? `, gzip ${mb(fs.statSync(gz).size)} MB` : ""}`,
+            );
+          ' "$file"
+
+      - name: Upload catalog artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: radio-garden-catalog
+          path: |
+            artifacts/cyberdeck-radio/public/radio-garden.json
+            artifacts/cyberdeck-radio/public/radio-garden.json.gz
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build
         run: pnpm --filter @workspace/cyberdeck-radio build
