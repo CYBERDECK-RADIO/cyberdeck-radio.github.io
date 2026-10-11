@@ -18,6 +18,8 @@ export type StationSource = {
   hint: string;
   placeholder: string;
   meta: string;
+  /** Attribute in the app footer for the catalog this source surfaces. */
+  credit: { label: string; href: string };
   /** Whether the catalog provides coordinates that can pin the world atlas. */
   global: boolean;
   /** Directory heading once results are in and the query is empty. */
@@ -41,6 +43,7 @@ export const STATION_SOURCES: Record<StationSourceId, StationSource> = {
     hint: "Search by station name, country, or genre",
     placeholder: "Station name, country, or genre",
     meta: "OPEN API · GEOTAGGED",
+    credit: { label: "RADIO-BROWSER.INFO", href: "https://www.radio-browser.info/" },
     global: true,
     browseTitle: "Live signals worldwide",
     placeholderTitle: "Find your frequency",
@@ -58,6 +61,7 @@ export const STATION_SOURCES: Record<StationSourceId, StationSource> = {
     hint: "Search the SomaFM channel lineup",
     placeholder: "SomaFM channel or vibe",
     meta: "CURATED CHANNELS · INTERNET ONLY",
+    credit: { label: "SOMAFM.COM", href: "https://somafm.com/" },
     global: false,
     browseTitle: "The SomaFM lineup",
     placeholderTitle: "Browse the lineup",
@@ -75,6 +79,7 @@ export const STATION_SOURCES: Record<StationSourceId, StationSource> = {
     hint: "Search the scraped world directory",
     placeholder: "Station name or country",
     meta: "CRAWLED CATALOG · GEOTAGGED",
+    credit: { label: "RADIO.GARDEN", href: "https://radio.garden/" },
     global: true,
     browseTitle: "Signals from Radio Garden",
     placeholderTitle: "Scan the garden",

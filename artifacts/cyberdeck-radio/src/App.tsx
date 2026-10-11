@@ -361,6 +361,11 @@ function Home() {
           </div>
         </aside>
       </div>
+      <footer className="atlas-credit" data-testid="source-credit">
+        <span>CYBERDECK RADIO · FIELD RECEIVER 001</span>
+        <span>STATIONS VIA <a href={source.credit.href} target="_blank" rel="noreferrer noopener">{source.credit.label}</a></span>
+        <span>LISTEN BEYOND THE STATIC</span>
+      </footer>
     </main>
   );
 }

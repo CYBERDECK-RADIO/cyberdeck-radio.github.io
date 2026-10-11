@@ -27,6 +27,16 @@ describe("App home view", () => {
     expect(screen.getByTestId("results-region")).toBeTruthy();
   });
 
+  it("credits the active catalog source in the footer", () => {
+    render(<App />);
+
+    const credit = screen.getByTestId("source-credit");
+    expect(credit.textContent).toContain("RADIO-BROWSER.INFO");
+    expect(credit.querySelector('a')?.getAttribute("href")).toBe(
+      "https://www.radio-browser.info/",
+    );
+  });
+
   it("renders the world broadcast atlas map", () => {
     render(<App />);
 
