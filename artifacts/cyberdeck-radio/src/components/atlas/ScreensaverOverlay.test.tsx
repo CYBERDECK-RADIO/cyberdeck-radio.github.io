@@ -38,9 +38,12 @@ describe("ScreensaverOverlay", () => {
     );
     expect(screen.getByTestId("screensaver-carrier").textContent).toBe("No carrier locked");
     expect(screen.getByTestId("screensaver-play").hasAttribute("disabled")).toBe(true);
-    expect(screen.getByTestId("screensaver-clock").textContent).toMatch(
-      /\d{2}:\d{2}:\d{2} UTC/,
-    );
+
+    const clock = screen.getByTestId("screensaver-clock");
+    expect(clock.querySelector("svg")).not.toBeNull();
+    expect(clock.querySelector(".analogue-clock__hand")).not.toBeNull();
+    expect(clock.querySelector("time")?.textContent).toMatch(/\d{2}:\d{2}:\d{2}/);
+    expect(clock.textContent).not.toContain("UTC");
   });
 
   it("shows the tuned station with its synthetic carrier and status", () => {

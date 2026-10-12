@@ -1,10 +1,10 @@
 /**
- * The one UTC clock face.
+ * The clock faces.
  *
- *   Date ──▶ formatUtcClock ──▶ "14:09:03"
+ *   Date ──▶ formatUtcClock ──▶ "14:09:03"      (header read-out, always UTC)
+ *   Date ──▶ formatLocalClock ──▶ "09:09:03"    (screen saver, local time)
  *
- * Shared by the header read-out and the screen saver so both always render the
- * same zero-padded, always-UTC timestamp.
+ * Both zero-pad every field, so the read-outs stay aligned across the UI.
  */
 
 function pad(value: number): string {
@@ -13,4 +13,8 @@ function pad(value: number): string {
 
 export function formatUtcClock(date: Date): string {
   return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+}
+
+export function formatLocalClock(date: Date): string {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }

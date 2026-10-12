@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Cinzel:wght@500;600&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@500;600&family=Rozha+One&family=Shippori+Mincho:wght@500;600&display=swap');
 @import 'tailwindcss';
 
 /* The shadcn `ui/` scaffold is unused at runtime; keep it out of Tailwind's
@@ -420,6 +420,168 @@
   --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* ═════════════════ Structural skin tokens ═════════════════
+   A skin is more than its palette. These tokens carry the type, geometry,
+   motion, and material character of each theme; every component consumes
+   them, so a theme swap restyles the chrome, not just the colours. The
+   defaults below are the Signal skin; each theme overrides what it changes.
+   Type/geometry/motion/material live here rather than in `themes.ts` so
+   presentation never drifts from the registry. */
+
+:root {
+  /* Type */
+  --font-display-round: 'Baloo 2', 'Geist', system-ui, sans-serif;
+  --font-display-mincho: 'Shippori Mincho', 'Cinzel', Georgia, serif;
+  --font-display-han: 'Noto Serif SC', 'Cinzel', Georgia, serif;
+  --font-display-deva: 'Rozha One', 'Cinzel', Georgia, serif;
+  --font-brand: 'Cinzel', Georgia, serif;
+  --font-display: var(--font-sans);
+  --brand-tracking: 0.16em;
+
+  /* Geometry */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --panel-radius: 2px;
+  --btn-radius: 0px;
+
+  /* Motion */
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-slow: 440ms;
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --ease-emphasis: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-scale: 1;
+
+  /* Material */
+  --grain: 0;
+  --sheen: 0;
+}
+
+/* ── Elements ── */
+[data-theme='water'] {
+  --panel-radius: 10px;
+  --btn-radius: 6px;
+  --radius-md: 10px;
+  --dur-base: 300ms;
+  --dur-slow: 520ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --grain: 0.05;
+  --sheen: 0.1;
+}
+[data-theme='air'] {
+  --panel-radius: 16px;
+  --btn-radius: var(--radius-pill);
+  --radius-md: 12px;
+  --ease-standard: cubic-bezier(0.33, 0.7, 0.3, 1);
+  --sheen: 0.16;
+}
+[data-theme='fire'] {
+  --dur-fast: 110ms;
+  --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --grain: 0.08;
+}
+[data-theme='earth'] {
+  --panel-radius: 8px;
+  --btn-radius: 4px;
+  --dur-base: 320ms;
+  --dur-slow: 560ms;
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --grain: 0.07;
+}
+
+/* ── Cartoon ── */
+[data-theme='bubblegum'] {
+  --font-brand: var(--font-display-round);
+  --font-display: var(--font-display-round);
+  --brand-tracking: 0.02em;
+  --panel-radius: 24px;
+  --btn-radius: var(--radius-pill);
+  --radius-md: 16px;
+  --ease-emphasis: cubic-bezier(0.34, 1.8, 0.5, 1);
+  --sheen: 0.18;
+}
+[data-theme='comic'] {
+  --font-brand: var(--font-display-round);
+  --font-display: var(--font-display-round);
+  --brand-tracking: 0.02em;
+  --panel-radius: 3px;
+  --btn-radius: 3px;
+  --radius-md: 4px;
+  --dur-fast: 110ms;
+  --grain: 0.1;
+}
+
+/* ── Japan ── */
+[data-theme='sakura'],
+[data-theme='matsuri'] {
+  --font-brand: var(--font-display-mincho);
+  --font-display: var(--font-display-mincho);
+  --brand-tracking: 0.12em;
+  --panel-radius: 6px;
+  --btn-radius: 4px;
+  --dur-base: 320ms;
+  --dur-slow: 560ms;
+  --ease-standard: cubic-bezier(0.33, 0, 0.2, 1);
+  --grain: 0.05;
+}
+[data-theme='matsuri'] { --sheen: 0.12; }
+
+/* ── China ── */
+[data-theme='lantern'],
+[data-theme='jade'] {
+  --font-brand: var(--font-display-han);
+  --font-display: var(--font-display-han);
+  --brand-tracking: 0.1em;
+  --panel-radius: 6px;
+  --btn-radius: 4px;
+  --dur-base: 300ms;
+  --grain: 0.04;
+  --sheen: 0.12;
+}
+[data-theme='jade'] {
+  --panel-radius: 14px;
+  --btn-radius: var(--radius-pill);
+}
+
+/* ── India ── */
+[data-theme='rajasthan'] {
+  --font-brand: var(--font-display-deva);
+  --font-display: var(--font-display-deva);
+  --brand-tracking: 0.06em;
+  --panel-radius: 20px 20px 6px 6px;
+  --btn-radius: 8px 8px 3px 3px;
+  --grain: 0.06;
+}
+[data-theme='kerala'] {
+  --font-brand: var(--font-display-deva);
+  --font-display: var(--font-display-deva);
+  --brand-tracking: 0.06em;
+  --panel-radius: 16px;
+  --btn-radius: var(--radius-pill);
+  --grain: 0.05;
+}
+[data-theme='punjab'] {
+  --font-brand: var(--font-display-deva);
+  --font-display: var(--font-display-deva);
+  --brand-tracking: 0.06em;
+  --panel-radius: 8px;
+  --btn-radius: 5px;
+  --dur-fast: 110ms;
+  --grain: 0.06;
+}
+[data-theme='tamil'] {
+  --font-brand: var(--font-display-deva);
+  --font-display: var(--font-display-deva);
+  --brand-tracking: 0.06em;
+  --panel-radius: 3px;
+  --btn-radius: 2px;
+  --dur-fast: 110ms;
+  --grain: 0.06;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -466,7 +628,7 @@ a { color: var(--accent); }
   text-transform: uppercase;
   letter-spacing: 0.08em;
   text-decoration: none;
-  transition: transform 0.16s ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 .skip-link:focus { transform: translateY(0); }
 
@@ -512,10 +674,10 @@ a { color: var(--accent); }
 
 .atlas-brand__text { display: flex; flex-direction: column; min-width: 0; }
 .atlas-brand__name {
-  font-family: var(--font-serif);
+  font-family: var(--font-brand);
   font-size: 17px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--brand-tracking);
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -572,7 +734,7 @@ a { color: var(--accent); }
   height: 18px;
   border-radius: 999px;
   color: var(--faint);
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .atlas-search__clear:hover { color: var(--text); background: var(--line); }
 .atlas-search__clear svg { width: 11px; height: 11px; }
@@ -596,7 +758,7 @@ a { color: var(--accent); }
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .atlas-search__submit:hover { color: var(--accent); border-color: var(--accent); }
 
@@ -634,7 +796,7 @@ a { color: var(--accent); }
   padding: 8px 10px;
   text-align: left;
   color: var(--muted);
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 .atlas-search__option:hover,
 .atlas-search__option.is-active {
@@ -689,7 +851,11 @@ a { color: var(--accent); }
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted);
+  opacity: 0.5;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
+.atlas-header:hover .atlas-header__meta,
+.atlas-header:focus-within .atlas-header__meta { opacity: 1; }
 .atlas-header__nodes {
   display: inline-flex;
   align-items: center;
@@ -699,7 +865,7 @@ a { color: var(--accent); }
   color: var(--muted);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .atlas-header__nodes:hover { color: var(--accent); border-color: var(--accent); }
 .atlas-header__nodes svg { width: 13px; height: 13px; }
@@ -712,7 +878,7 @@ a { color: var(--accent); }
   color: var(--muted);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .atlas-header__pinned:hover { color: var(--accent); border-color: var(--accent); }
 .atlas-header__pinned svg { width: 13px; height: 13px; }
@@ -725,7 +891,7 @@ a { color: var(--accent); }
   color: var(--muted);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  transition: color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
 }
 .atlas-header__shuffle:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
 .atlas-header__shuffle:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -739,7 +905,7 @@ a { color: var(--accent); }
   min-height: 0;
   overflow: hidden;
   background:
-    radial-gradient(rgba(126, 134, 151, 0.16) 1px, transparent 1px);
+    radial-gradient(rgba(126, 134, 151, 0.1) 1px, transparent 1px);
   background-size: 56px 56px;
 }
 
@@ -747,23 +913,23 @@ a { color: var(--accent); }
    decorative SVG layer; the dotted grid stays the fallback for `signal`. */
 [data-theme='water'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: repeating-radial-gradient(circle at 22% 26%, transparent 0 30px, color-mix(in srgb, var(--accent) 11%, transparent) 30px 31px),
-    repeating-radial-gradient(circle at 78% 74%, transparent 0 42px, color-mix(in srgb, var(--accent) 8%, transparent) 42px 43px);
+  background-image: repeating-radial-gradient(circle at 22% 26%, transparent 0 30px, color-mix(in srgb, var(--accent) 7%, transparent) 30px 31px),
+    repeating-radial-gradient(circle at 78% 74%, transparent 0 42px, color-mix(in srgb, var(--accent) 5%, transparent) 42px 43px);
 }
 [data-theme='air'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: repeating-linear-gradient(115deg, transparent 0 30px, color-mix(in srgb, var(--accent) 12%, transparent) 30px 31px);
+  background-image: repeating-linear-gradient(115deg, transparent 0 30px, color-mix(in srgb, var(--accent) 7%, transparent) 30px 31px);
 }
 [data-theme='fire'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: radial-gradient(130% 90% at 50% 120%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 62%),
-    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(130% 90% at 50% 120%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 62%),
+    radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: auto, 48px 48px;
 }
 [data-theme='earth'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: repeating-radial-gradient(circle at 30% 40%, transparent 0 22px, color-mix(in srgb, var(--accent) 9%, transparent) 22px 23px),
-    repeating-radial-gradient(circle at 72% 76%, transparent 0 36px, color-mix(in srgb, var(--accent) 7%, transparent) 36px 37px);
+  background-image: repeating-radial-gradient(circle at 30% 40%, transparent 0 22px, color-mix(in srgb, var(--accent) 6%, transparent) 22px 23px),
+    repeating-radial-gradient(circle at 72% 76%, transparent 0 36px, color-mix(in srgb, var(--accent) 5%, transparent) 36px 37px);
 }
 [data-theme='bubblegum'] .atlas-canvas,
 [data-theme='comic'] .atlas-canvas {
@@ -772,23 +938,23 @@ a { color: var(--accent); }
 }
 [data-theme='sakura'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%);
+  background-image: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 60%);
 }
 [data-theme='matsuri'] .atlas-canvas,
 [data-theme='lantern'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: radial-gradient(120% 80% at 50% 110%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 60%);
+  background-image: radial-gradient(120% 80% at 50% 110%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%);
 }
 [data-theme='jade'] .atlas-canvas,
 [data-theme='kerala'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%);
+  background-image: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 62%);
 }
 [data-theme='rajasthan'] .atlas-canvas,
 [data-theme='punjab'] .atlas-canvas,
 [data-theme='tamil'] .atlas-canvas {
   background-color: var(--bg);
-  background-image: radial-gradient(120% 100% at 50% 50%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 65%);
+  background-image: radial-gradient(120% 100% at 50% 50%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 65%);
 }
 
 /* The decorative inline-SVG pattern layer: above the shader sky, below the
@@ -804,20 +970,40 @@ a { color: var(--accent); }
   pointer-events: none;
   opacity: 0.5;
 }
-.motif-art--bubbles { animation: motif-drift-y 26s ease-in-out infinite; opacity: 0.55; }
-.motif-art--sakura { animation: motif-fall 30s linear infinite; opacity: 0.6; }
-.motif-art--lanterns { animation: motif-sway 9s ease-in-out infinite; opacity: 0.65; }
-.motif-art--ripples { animation: motif-ripple 22s ease-in-out infinite; opacity: 0.45; }
-.motif-art--embers { opacity: 0.7; }
-.motif-art--wind { animation: motif-drift-x 34s linear infinite; opacity: 0.4; }
-.motif-art--phulkari { animation: motif-sway 14s ease-in-out infinite; opacity: 0.4; }
-.motif-art--mandala { animation: motif-spin 90s linear infinite; opacity: 0.4; }
-.motif-art--kolam { opacity: 0.4; }
-.motif-art--seigaiha { opacity: 0.4; }
-.motif-art--halftone { opacity: 0.35; }
-.motif-art--contours { opacity: 0.4; }
+/* The art layer is a still print while you work — the shader sky is the one
+   layer allowed to move. Ambient drift returns only in the atmospheric modes
+   (zen, screen saver), where ambience is the whole point, and the tints sit
+   low so the cartography reads first. */
+.motif-art--bubbles { opacity: 0.34; }
+.motif-art--sakura { opacity: 0.36; }
+.motif-art--lanterns { opacity: 0.4; }
+.motif-art--ripples { opacity: 0.3; }
+.motif-art--embers { opacity: 0.42; }
+.motif-art--wind { opacity: 0.28; }
+.motif-art--phulkari { opacity: 0.28; }
+.motif-art--mandala { opacity: 0.28; }
+.motif-art--kolam { opacity: 0.26; }
+.motif-art--seigaiha { opacity: 0.26; }
+.motif-art--halftone { opacity: 0.24; }
+.motif-art--contours { opacity: 0.26; }
 
-.motif-ember { animation: motif-rise 5s ease-in infinite; }
+.app.is-zen .motif-art--bubbles,
+.app.is-screensaver .motif-art--bubbles { animation: motif-drift-y 26s ease-in-out infinite; }
+.app.is-zen .motif-art--sakura,
+.app.is-screensaver .motif-art--sakura { animation: motif-fall 30s linear infinite; }
+.app.is-zen .motif-art--lanterns,
+.app.is-screensaver .motif-art--lanterns { animation: motif-sway 9s ease-in-out infinite; }
+.app.is-zen .motif-art--ripples,
+.app.is-screensaver .motif-art--ripples { animation: motif-ripple 22s ease-in-out infinite; }
+.app.is-zen .motif-art--wind,
+.app.is-screensaver .motif-art--wind { animation: motif-drift-x 34s ease-in-out infinite; }
+.app.is-zen .motif-art--phulkari,
+.app.is-screensaver .motif-art--phulkari { animation: motif-sway 14s ease-in-out infinite; }
+.app.is-zen .motif-art--mandala,
+.app.is-screensaver .motif-art--mandala { animation: motif-spin 90s linear infinite; }
+
+.app.is-zen .motif-ember,
+.app.is-screensaver .motif-ember { animation: motif-rise 5s ease-in infinite; }
 
 /* WebGL mesh-gradient sky (Paper Shaders), themed from the CSS tokens.
    Sits under the SVG world; the dotted grid above reads through it. */
@@ -826,15 +1012,15 @@ a { color: var(--accent); }
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.36;
 }
 .atlas-canvas__backdrop canvas { display: block; width: 100%; height: 100%; }
 
 /* The world must paint over the shader canvas; keep it in the same stack. */
 .atlas-world { position: absolute; inset: 0; z-index: 1; }
 .atlas-world__grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.atlas-world__axis { stroke: var(--line-soft); stroke-width: 0.6; }
-.atlas-world__axis--equator { stroke: var(--accent); stroke-width: 0.7; stroke-dasharray: 3 4; opacity: 0.55; }
+.atlas-world__axis { stroke: var(--line-soft); stroke-width: 0.6; opacity: 0.2; }
+.atlas-world__axis--equator { stroke: var(--accent); stroke-width: 0.7; stroke-dasharray: 3 4; opacity: 0.25; }
 
 .atlas-world__svg { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 .atlas-world.is-interacting .atlas-world__svg { cursor: grabbing; }
@@ -842,16 +1028,17 @@ a { color: var(--accent); }
 
 .atlas-world__countries path {
   fill: var(--card);
-  fill-opacity: 0.75;
+  fill-opacity: 0.68;
   stroke: var(--line-soft);
+  stroke-opacity: 0.7;
   stroke-width: 0.6;
   vector-effect: non-scaling-stroke;
 }
 
-.atlas-world__pip { cursor: pointer; color: var(--muted); transition: color 0.15s ease; }
+.atlas-world__pip { cursor: pointer; color: var(--muted); transition: color var(--dur-fast) var(--ease-standard); }
 /* Shapes paint from `currentColor`, so one color rule on the pip re-colours
    every glyph regardless of its paths. */
-.atlas-world__glyph { fill: currentColor; stroke: none; transition: fill 0.15s ease; }
+.atlas-world__glyph { fill: currentColor; stroke: none; transition: fill var(--dur-fast) var(--ease-standard); }
 .atlas-world__glyph-line { fill: none; stroke: currentColor; }
 .atlas-world__glyph--shine { fill: color-mix(in srgb, #ffffff 55%, currentColor); }
 .atlas-world__glyph--core { fill: color-mix(in srgb, currentColor 40%, var(--bg)); }
@@ -871,24 +1058,36 @@ a { color: var(--accent); }
   100% { transform: scale(1); opacity: 0; }
 }
 
-/* Ambient glyph motion: the shape itself is alive, keyed by motif. */
-.pip-shape--droplet { animation: pip-bob 2.6s ease-in-out infinite; }
-.pip-shape--blob { animation: pip-bob 3.4s ease-in-out infinite; }
-.pip-shape--ring .atlas-world__glyph--arc { animation: pip-spin 6s linear infinite; }
-.pip-shape--spark { animation: pip-flicker 1.6s ease-in-out infinite; }
-.pip-shape--lanternPip { animation: pip-sway 4.2s ease-in-out infinite; }
+/* Rest is still: hundreds of glyphs animating at once is noise, not life.
+   Each motif only declares the motion it would do — it runs on the pip under
+   the cursor, the keyboard-focused one, or the locked channel. */
+.pip-shape--droplet { --pip-motion: pip-bob 2.6s ease-in-out infinite; }
+.pip-shape--blob { --pip-motion: pip-bob 3.4s ease-in-out infinite; }
+.pip-shape--spark { --pip-motion: pip-flicker 1.6s ease-in-out infinite; }
+.pip-shape--lanternPip { --pip-motion: pip-sway 4.2s ease-in-out infinite; }
 .pip-shape--petal,
-.pip-shape--flower { animation: pip-spin 26s linear infinite; }
-@keyframes pip-bob { 0%, 100% { transform: translateY(-0.6px); } 50% { transform: translateY(0.6px); } }
+.pip-shape--flower { --pip-motion: pip-spin 26s linear infinite; }
+/* The ring spins its arc only, never the whole glyph. */
+.pip-shape--ring .atlas-world__glyph--arc { --pip-motion: pip-spin 6s linear infinite; }
+
+.atlas-world__pip:hover .pip-shape,
+.atlas-world__pip:focus-visible .pip-shape,
+.atlas-world__pip.is-selected .pip-shape { animation: var(--pip-motion, none); }
+.atlas-world__pip:hover .atlas-world__glyph--arc,
+.atlas-world__pip:focus-visible .atlas-world__glyph--arc,
+.atlas-world__pip.is-selected .atlas-world__glyph--arc {
+  animation: var(--pip-motion, none);
+}
+@keyframes pip-bob { 0%, 100% { transform: translateY(calc(var(--motion-scale) * -0.6px)); } 50% { transform: translateY(calc(var(--motion-scale) * 0.6px)); } }
 @keyframes pip-spin { to { transform: rotate(360deg); } }
 @keyframes pip-flicker { 0%, 100% { opacity: 1; } 45% { opacity: 0.55; } 60% { opacity: 0.95; } }
-@keyframes pip-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes pip-sway { 0%, 100% { transform: rotate(calc(var(--motion-scale) * -6deg)); } 50% { transform: rotate(calc(var(--motion-scale) * 6deg)); } }
 
 /* Ambient motion for the decorative art layer. */
-@keyframes motif-drift-x { 0%, 100% { transform: translateX(-2%); } 50% { transform: translateX(2%); } }
-@keyframes motif-drift-y { 0%, 100% { transform: translateY(-6px); } 50% { transform: translateY(6px); } }
-@keyframes motif-fall { 0%, 100% { transform: translateY(-10px); } 50% { transform: translateY(10px); } }
-@keyframes motif-sway { 0%, 100% { transform: rotate(-0.6deg); } 50% { transform: rotate(0.6deg); } }
+@keyframes motif-drift-x { 0%, 100% { transform: translateX(calc(var(--motion-scale) * -2%)); } 50% { transform: translateX(calc(var(--motion-scale) * 2%)); } }
+@keyframes motif-drift-y { 0%, 100% { transform: translateY(calc(var(--motion-scale) * -6px)); } 50% { transform: translateY(calc(var(--motion-scale) * 6px)); } }
+@keyframes motif-fall { 0%, 100% { transform: translateY(calc(var(--motion-scale) * -10px)); } 50% { transform: translateY(calc(var(--motion-scale) * 10px)); } }
+@keyframes motif-sway { 0%, 100% { transform: rotate(calc(var(--motion-scale) * -0.6deg)); } 50% { transform: rotate(calc(var(--motion-scale) * 0.6deg)); } }
 @keyframes motif-ripple { 0%, 100% { transform: scale(1); opacity: 0.45; } 50% { transform: scale(1.06); opacity: 0.6; } }
 @keyframes motif-spin { to { transform: rotate(360deg); } }
 @keyframes motif-rise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
@@ -896,16 +1095,16 @@ a { color: var(--accent); }
 /* ── density clusters ── */
 /* A 38k-channel crawl paints bubbles, not 38k pips: glow → ring → core → count. */
 .atlas-world__cluster { cursor: pointer; }
-.atlas-world__cluster-halo { fill: var(--accent); opacity: 0.1; transition: opacity 0.15s ease; }
+.atlas-world__cluster-halo { fill: var(--accent); opacity: 0; transition: opacity var(--dur-fast) var(--ease-standard); }
 .atlas-world__cluster-core {
   fill: color-mix(in srgb, var(--accent) 34%, transparent);
-  opacity: 0.6;
+  opacity: 0.5;
 }
 .atlas-world__cluster-ring {
   fill: color-mix(in srgb, var(--accent) 14%, transparent);
   stroke: color-mix(in srgb, var(--accent) 55%, transparent);
   stroke-width: 1;
-  transition: fill 0.15s ease, stroke 0.15s ease;
+  transition: fill var(--dur-fast) var(--ease-standard), stroke var(--dur-fast) var(--ease-standard);
 }
 .atlas-world__cluster-count {
   fill: var(--accent-strong);
@@ -956,6 +1155,7 @@ a { color: var(--accent); }
 }
 .atlas-world__hint-title {
   overflow: hidden;
+  font-family: var(--font-display);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.25;
@@ -1012,7 +1212,7 @@ a { color: var(--accent); }
   height: 22px;
   border: 1px solid transparent;
   color: var(--muted);
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .cluster-picker__close:hover { color: var(--text); border-color: var(--line); }
 .cluster-picker__close svg { width: 12px; height: 12px; }
@@ -1042,7 +1242,7 @@ a { color: var(--accent); }
   padding: 7px 8px;
   text-align: left;
   color: var(--muted);
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 .cluster-picker__row:hover,
 .cluster-picker__row:focus-visible { background: var(--accent-soft); color: var(--text); }
@@ -1097,7 +1297,7 @@ a { color: var(--accent); }
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transition: color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard);
 }
 .cluster-picker__more:hover { color: var(--accent); }
 
@@ -1109,7 +1309,11 @@ a { color: var(--accent); }
   flex-direction: column;
   gap: 6px;
   z-index: 5;
+  opacity: 0.35;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
+.atlas-world__controls:hover,
+.atlas-world__controls:focus-within { opacity: 1; }
 .atlas-world__controls button {
   min-width: 34px;
   height: 30px;
@@ -1120,7 +1324,7 @@ a { color: var(--accent); }
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.08em;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .atlas-world__controls button:hover { color: var(--accent); border-color: var(--accent); }
 
@@ -1132,7 +1336,11 @@ a { color: var(--accent); }
   font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--faint);
+  opacity: 0.35;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
+.atlas-world__credit:hover,
+.atlas-world__credit:focus-within { opacity: 1; }
 
 /* ── mode dock ── */
 .mode-dock {
@@ -1158,7 +1366,7 @@ a { color: var(--accent); }
   font-size: 9.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .mode-dock__button svg { width: 12px; height: 12px; flex: 0 0 auto; }
 .mode-dock__button:hover { color: var(--accent); border-color: var(--accent); }
@@ -1207,7 +1415,7 @@ a { color: var(--accent); }
   border: 1px solid transparent;
   text-align: left;
   color: var(--muted);
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .theme-switcher__option:hover,
 .theme-switcher__option:focus-visible { background: var(--accent-soft); color: var(--text); }
@@ -1245,6 +1453,23 @@ a { color: var(--accent); }
 .theme-switcher__trigger { max-width: 132px; }
 .theme-switcher__trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .theme-switcher__check { margin-left: auto; width: 13px; height: 13px; color: var(--accent); }
+/* Type specimen: each row renders "Aa" in the skin's display face. `data-theme`
+   on the row resolves --font-display/--line locally, so the picker previews the
+   skin's type ramp and geometry, not just its swatch colour. */
+.theme-switcher__option-sample {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 24px;
+  padding-left: 9px;
+  border-left: 1px solid var(--line);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 1;
+}
 
 /* ── dossier card ── */
 .atlas-canvas__dossier {
@@ -1291,6 +1516,7 @@ a { color: var(--accent); }
 
 .dossier__title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 21px;
   font-weight: 600;
   line-height: 1.2;
@@ -1306,7 +1532,7 @@ a { color: var(--accent); }
   height: 28px;
   border: 1px solid var(--line);
   color: var(--faint);
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .dossier__action svg { width: 13px; height: 13px; }
 .dossier__action:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
@@ -1385,7 +1611,7 @@ a { color: var(--accent); }
   height: 38px;
   border: 1px solid var(--line);
   color: var(--muted);
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .dossier__button svg { width: 15px; height: 15px; }
 .dossier__button:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
@@ -1419,7 +1645,7 @@ a { color: var(--accent); }
   text-transform: uppercase;
   color: var(--muted);
   text-align: left;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .dossier__sleep-menu button:hover { color: var(--accent); background: var(--accent-soft); }
 .dossier__sleep-readout {
@@ -1435,7 +1661,7 @@ a { color: var(--accent); }
   height: 22px;
   flex: 0 0 auto;
   color: var(--muted);
-  transition: color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard);
 }
 .dossier__mute svg { width: 14px; height: 14px; }
 .dossier__mute:hover { color: var(--text); }
@@ -1505,7 +1731,11 @@ a { color: var(--accent); }
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--faint);
+  opacity: 0.5;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
+.atlas-footer:hover,
+.atlas-footer:focus-within { opacity: 1; }
 .atlas-footer a { color: var(--muted); text-decoration: none; }
 .atlas-footer a:hover { color: var(--accent); }
 .atlas-footer__catalog { margin-left: 4px; color: var(--muted); }
@@ -1518,7 +1748,7 @@ a { color: var(--accent); }
   grid-template-columns: 150px minmax(0, 1fr);
   align-items: center;
   gap: 20px;
-  height: 84px;
+  height: 64px;
   padding: 0 clamp(14px, 2.4vw, 28px);
   border-top: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg-subtle) 70%, transparent);
@@ -1553,12 +1783,13 @@ a { color: var(--accent); }
   align-items: center;
   gap: 5px;
 }
-.ruler__tick-line { width: 1px; height: 8px; background: var(--line-soft); }
+.ruler__tick-line { width: 1px; height: 8px; background: var(--line-soft); opacity: 0.7; }
 .ruler__tick-label {
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
   color: var(--faint);
+  opacity: 0.7;
 }
 
 .ruler__needle {
@@ -1569,7 +1800,7 @@ a { color: var(--accent); }
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  transition: left 0.18s ease;
+  transition: left var(--dur-base) var(--ease-standard);
   pointer-events: none;
 }
 .ruler__needle.is-preview { transition: none; }
@@ -1669,7 +1900,7 @@ a { color: var(--accent); }
 
 .screensaver__title {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-brand);
   font-size: clamp(30px, 6.2vw, 66px);
   font-weight: 500;
   line-height: 1.08;
@@ -1708,12 +1939,37 @@ a { color: var(--accent); }
 .screensaver__health.health-checking { color: var(--checking); }
 
 .screensaver__clock {
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: clamp(2px, 1.2vh, 8px) 0 0;
+}
+
+.analogue-clock__dial {
+  width: clamp(150px, 30vh, 216px);
+  height: clamp(150px, 30vh, 216px);
+  filter: drop-shadow(0 0 26px rgba(212, 152, 79, 0.14));
+}
+
+.analogue-clock__bezel {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.analogue-clock__hub {
+  fill: var(--text);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.screensaver__clock-time {
   font-family: var(--font-mono);
-  font-size: clamp(22px, 3.4vw, 34px);
-  letter-spacing: 0.14em;
-  color: var(--text);
-  opacity: 0.9;
+  font-size: clamp(13px, 2vw, 16px);
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .screensaver__controls {
@@ -1736,7 +1992,7 @@ a { color: var(--accent); }
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .screensaver__button svg { width: 14px; height: 14px; }
 .screensaver__button:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
@@ -1782,7 +2038,7 @@ a { color: var(--accent); }
   background: var(--overlay);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dur-base) var(--ease-standard);
   z-index: 40;
 }
 .list-scrim.is-open { opacity: 1; pointer-events: auto; }
@@ -1799,7 +2055,7 @@ a { color: var(--accent); }
   border-right: 1px solid var(--line);
   box-shadow: var(--shadow-float);
   transform: translateX(-100%);
-  transition: transform 0.22s ease;
+  transition: transform var(--dur-base) var(--ease-standard);
   z-index: 50;
 }
 .list-drawer.is-open { transform: translateX(0); }
@@ -1823,6 +2079,7 @@ a { color: var(--accent); }
 }
 .list-drawer__title h2 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -1834,7 +2091,7 @@ a { color: var(--accent); }
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
-  transition: color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard);
 }
 .list-drawer__clear:hover { color: var(--offline); }
 .list-drawer__close {
@@ -1874,7 +2131,7 @@ a { color: var(--accent); }
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted);
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .shelf-switch__option:hover { color: var(--text); border-color: var(--accent); }
 .shelf-switch__option.is-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
@@ -1923,7 +2180,7 @@ a { color: var(--accent); }
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid var(--line);
-  transition: background 0.15s ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 .station-row:hover { background: color-mix(in srgb, var(--accent-soft) 60%, transparent); }
 .station-row.is-selected { background: var(--accent-soft); }
@@ -1945,7 +2202,7 @@ a { color: var(--accent); }
   width: 34px;
   border-left: 1px solid var(--line);
   color: var(--faint);
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .station-row__pin svg { width: 13px; height: 13px; }
 .station-row__pin:hover { color: var(--accent); background: var(--accent-soft); }
@@ -2012,7 +2269,7 @@ a { color: var(--accent); }
   font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .list-more:hover {
   color: var(--accent);
@@ -2032,7 +2289,7 @@ a { color: var(--accent); }
   background: var(--bg-subtle);
   text-align: left;
 }
-.state-panel h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.state-panel h3 { margin: 0; font-family: var(--font-display); font-size: 15px; font-weight: 600; }
 .state-panel p { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
 .state-panel.error { border-color: color-mix(in srgb, var(--offline) 50%, transparent); }
 .state-glyph { color: var(--accent); }
@@ -2098,7 +2355,7 @@ a { color: var(--accent); }
 }
 .not-found__title {
   margin: 0 0 12px;
-  font-family: var(--font-serif);
+  font-family: var(--font-brand);
   font-size: 28px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -2117,6 +2374,137 @@ a { color: var(--accent); }
   text-decoration: none;
 }
 .not-found__cta:hover { background: var(--accent-soft); }
+
+/* ── themed shape language ──
+   A skin's geometry reaches every piece of chrome: one radius scale, swapped
+   per family, so square Comic and round Bubblegum read as different products. */
+.atlas-search,
+.atlas-header__nodes,
+.atlas-header__pinned,
+.atlas-header__shuffle,
+.atlas-world__controls button,
+.mode-dock__button,
+.atlas-search__submit,
+.atlas-search__kbd,
+.theme-switcher__option,
+.dossier__action,
+.dossier__button,
+.dossier__sleep-menu button,
+.screensaver__button,
+.shelf-switch__option,
+.station-filters__field select,
+.station-filters__clear,
+.retry-button,
+.list-more,
+.list-drawer__close,
+.not-found__cta,
+.skip-link { border-radius: var(--btn-radius); }
+
+.atlas-search__palette,
+.theme-switcher__menu,
+.cluster-picker,
+.dossier,
+.dossier__status,
+.dossier__sleep-menu,
+.atlas-world__hint,
+.state-panel,
+.skeleton-row,
+.not-found__card { border-radius: var(--panel-radius); }
+
+.list-drawer { border-radius: 0 var(--panel-radius) var(--panel-radius) 0; }
+.dossier__error { border-radius: var(--radius-sm); }
+.theme-switcher__chip { border-radius: var(--radius-sm); }
+
+/* Ambient-motion amplitude per family: toons bounce, elements and the
+   cultural skins drift. Multiplies the pin/motif keyframe travel. */
+[data-theme='bubblegum'] { --motion-scale: 1.5; }
+[data-theme='comic'] { --motion-scale: 1.25; }
+[data-theme='fire'] { --motion-scale: 1.3; }
+[data-theme='air'] { --motion-scale: 1.1; }
+[data-theme='water'],
+[data-theme='earth'],
+[data-theme='sakura'],
+[data-theme='matsuri'],
+[data-theme='lantern'],
+[data-theme='jade'] { --motion-scale: 0.7; }
+
+/* ── themed material: grain + sheen over the whole deck ──
+   One film layer, tuned per skin; zero for flat/light themes so text stays
+   crisp. `--grain` drives a tiled fractal-noise sheet, `--sheen` a soft
+   lacquer highlight from the top-left. */
+.app::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  mix-blend-mode: overlay;
+}
+.app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 69;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ffffff calc(var(--sheen) * 100%), transparent),
+    transparent 42%
+  );
+}
+
+/* ── themed component chrome ──
+   Beyond tokens, each family gets a signature treatment on the shared
+   surfaces, so the deck itself — not just the map — wears the skin. */
+/* Cartoon: inked outlines on every panel and button. */
+[data-theme='bubblegum'] .dossier,
+[data-theme='comic'] .dossier,
+[data-theme='bubblegum'] .cluster-picker,
+[data-theme='comic'] .cluster-picker,
+[data-theme='bubblegum'] .theme-switcher__menu,
+[data-theme='comic'] .theme-switcher__menu {
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+[data-theme='bubblegum'] .dossier__button,
+[data-theme='comic'] .dossier__button,
+[data-theme='bubblegum'] .mode-dock__button,
+[data-theme='comic'] .mode-dock__button,
+[data-theme='bubblegum'] .dossier__action,
+[data-theme='comic'] .dossier__action { border-width: 2px; }
+
+/* China: a lacquer frame — the accent gilds the panel edge. */
+[data-theme='lantern'] .dossier,
+[data-theme='jade'] .dossier,
+[data-theme='lantern'] .cluster-picker,
+[data-theme='jade'] .cluster-picker {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  box-shadow: var(--shadow-card), inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Japan: a paper hairline — the top edge catches the accent. */
+[data-theme='sakura'] .dossier,
+[data-theme='matsuri'] .dossier {
+  border-top: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* India: a woven selvedge — the dossier's left edge becomes a stripe. */
+[data-theme='rajasthan'] .dossier,
+[data-theme='kerala'] .dossier,
+[data-theme='punjab'] .dossier,
+[data-theme='tamil'] .dossier {
+  border-left: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* Elements: the primary transport glows with the accent. */
+[data-theme='fire'] .dossier__button--primary,
+[data-theme='water'] .dossier__button--primary,
+[data-theme='air'] .dossier__button--primary {
+  box-shadow: 0 0 18px var(--accent-glow);
+}
 
 /* ── responsive ── */
 @media (max-width: 900px) {
@@ -2137,7 +2525,7 @@ a { color: var(--accent); }
     width: auto;
   }
   .dossier__caption { display: none; }
-  .ruler { grid-template-columns: 110px minmax(0, 1fr); height: 74px; }
+  .ruler { grid-template-columns: 110px minmax(0, 1fr); height: 64px; }
   .atlas-world__controls { bottom: 120px; }
   .atlas-world__credit { display: none; }
 }

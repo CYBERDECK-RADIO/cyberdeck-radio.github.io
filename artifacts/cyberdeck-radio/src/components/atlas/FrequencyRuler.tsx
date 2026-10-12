@@ -31,7 +31,7 @@ type FrequencyRulerProps = {
   onTune: (stationId: string) => void;
 };
 
-const TICK_STEP = 2;
+const TICK_STEP = 4;
 const TICKS: number[] = [];
 for (let value = 88; value <= 108; value += TICK_STEP) TICKS.push(value);
 

@@ -17,7 +17,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { getThemeDefinition, type ShaderProfile, type ThemeId } from "@/preferences/themes";
 
 /** Backdrop opacity while the atlas is awake, in zen, and while dimmed. */
-export const BACKDROP_OPACITY = 0.5;
+export const BACKDROP_OPACITY = 0.36;
 
 /** Hard fallbacks mirroring :root tokens, for environments without CSS vars. */
 const FALLBACK_COLORS = {

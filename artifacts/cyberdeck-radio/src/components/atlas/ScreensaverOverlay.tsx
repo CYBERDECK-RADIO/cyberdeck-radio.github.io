@@ -1,7 +1,8 @@
 /**
  * The screen saver: the atlas gone quiet.
  *
- *   engaged atlas ──▶ dimmed canvas ──▶ centered station identity + UTC clock
+ *   engaged atlas ──▶ dimmed canvas ──▶ centered station identity + local-time
+ *   -                                    analogue dial (never UTC)
  *   station + PlaybackState + health ──▶ name / carrier / status / meter
  *   transport inside ──▶ data-screensaver-control (keeps the saver running)
  *   wake button + any deliberate input ──▶ onWake
@@ -14,11 +15,12 @@
 import { useEffect, useState } from "react";
 import { Pause, Play, Sun } from "lucide-react";
 import type { AnalyserLike, PlaybackState } from "@/audio/audio-controller";
-import { formatUtcClock } from "@/lib/clock";
+import { formatLocalClock } from "@/lib/clock";
 import { formatFrequency, stationFrequency } from "@/stations/frequency";
 import { HEALTH_LABELS, stationLocationLabel } from "@/stations/station-meta";
 import type { HealthStatus } from "@/stations/stream-health-logic";
 import type Station from "@/stations/types";
+import AnalogueClock from "./AnalogueClock";
 import LevelMeter from "./LevelMeter";
 import { toDossierDisplay } from "./dossier-display";
 
@@ -40,10 +42,11 @@ export default function ScreensaverOverlay({
   onWake,
 }: ScreensaverOverlayProps) {
   const display = toDossierDisplay(playback);
-  const [clock, setClock] = useState(() => formatUtcClock(new Date()));
+  const [now, setNow] = useState(() => new Date());
+  const localTime = formatLocalClock(now);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setClock(formatUtcClock(new Date())), 1000);
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -84,13 +87,16 @@ export default function ScreensaverOverlay({
           )}
         </p>
 
-        <p
+        <figure
           className="screensaver__clock"
           data-testid="screensaver-clock"
-          aria-label="Coordinated universal time"
+          aria-label={`Local time ${localTime}`}
         >
-          {clock} UTC
-        </p>
+          <AnalogueClock date={now} />
+          <time className="screensaver__clock-time" dateTime={localTime}>
+            {localTime}
+          </time>
+        </figure>
 
         <div className="screensaver__controls">
           <button

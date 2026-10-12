@@ -6,7 +6,7 @@ import App from "./App";
 import { SCREENSAVER_IDLE_MS } from "@/modes/screensaver";
 import { resetPinnedChannels } from "@/stations/pinned-channels";
 import { resetGardenStationsCache } from "@/stations/radio-garden";
-import { resetRecentChannels } from "@/stations/recent-channels";
+import { recordChannel, resetRecentChannels } from "@/stations/recent-channels";
 import { resetSomaChannelsCache } from "@/stations/somafm";
 
 const jsonResponse = (body: unknown, status = 200): Response => {
@@ -763,6 +763,60 @@ describe("Radio Atlas channel keeping", () => {
     await waitFor(() =>
       expect(screen.getByTestId("deck-station-name").textContent).toBe("Night Harbour"),
     );
+  });
+
+  it("tunes the last played channel on a new visit", async () => {
+    twoStationDirectory();
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    // Night Harbour is the newest dial-log entry (and only the second-nearest
+    // signal to the map centre), so restoring it proves the log won the lock.
+    recordChannel({
+      id: "garden:trend-2",
+      name: "Night Harbour",
+      genres: [],
+      streams: [{ url: "https://stream.example/harbour" }],
+      countryCode: "JP",
+      country: "Japan",
+      coordinates: [139.69, 35.68],
+    });
+
+    render(<App />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("deck-station-name").textContent).toBe("Night Harbour"),
+    );
+  });
+
+  it("falls back to the closest locale channel when the last played one is gone", async () => {
+    twoStationDirectory();
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    const originalLanguage = Object.getOwnPropertyDescriptor(window.navigator, "language");
+    Object.defineProperty(window.navigator, "language", {
+      configurable: true,
+      value: "fr-FR",
+    });
+    recordChannel({
+      id: "garden:vanished",
+      name: "Vanished FM",
+      genres: [],
+      streams: [{ url: "https://stream.example/vanished" }],
+      countryCode: "FR",
+      country: "France",
+    });
+
+    try {
+      render(<App />);
+
+      await waitFor(() =>
+        expect(screen.getByTestId("deck-station-name").textContent).toBe("Global Wave"),
+      );
+    } finally {
+      if (originalLanguage) {
+        Object.defineProperty(window.navigator, "language", originalLanguage);
+      } else {
+        Reflect.deleteProperty(window.navigator, "language");
+      }
+    }
   });
 
   it("arms a sleep timer from the dossier transport", async () => {

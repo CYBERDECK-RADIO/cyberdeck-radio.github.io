@@ -28,11 +28,14 @@ export function usePreferences(): {
   volume: number;
   visualizerStyle: VisualizerStyle;
   theme: ThemeId;
+  soundCues: boolean;
   setVolume: (value: number) => void;
   setVisualizerStyle: (style: VisualizerStyle) => void;
   cycleVisualizerStyle: () => void;
   setTheme: (theme: ThemeId) => void;
   cycleTheme: () => void;
+  setSoundCues: (enabled: boolean) => void;
+  toggleSoundCues: () => void;
 } {
   const [preferences, setPreferences] = useState<Preferences>(() => {
     const initial = readPreferences();
@@ -59,6 +62,7 @@ export function usePreferences(): {
     volume: preferences.volume,
     visualizerStyle: preferences.visualizerStyle,
     theme: preferences.theme,
+    soundCues: preferences.soundCues,
     setVolume: (value) =>
       setPreferences((current) => ({ ...current, volume: clampVolume(value) })),
     setVisualizerStyle: (style) =>
@@ -82,5 +86,9 @@ export function usePreferences(): {
         applyThemeToDocument(next);
         return { ...current, theme: next };
       }),
+    setSoundCues: (enabled) =>
+      setPreferences((current) => ({ ...current, soundCues: enabled })),
+    toggleSoundCues: () =>
+      setPreferences((current) => ({ ...current, soundCues: !current.soundCues })),
   };
 }

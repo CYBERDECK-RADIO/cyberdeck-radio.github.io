@@ -4,17 +4,20 @@
  *   ThemeId ──▶ ThemeDefinition[] (label, blurb, family, pip, art, shader, swatch)
  *   applyThemeToDocument(id) ──▶ <html data-theme="…"> ──▶ CSS token block
  *
- * A skin is not just a palette. Each theme declares three things the renderers
- * read from here and nowhere else:
+ * A skin is more than a palette. Beyond the `[data-theme]` colour block in
+ * `index.css`, each row names the renderers and the audio layer read from here:
  *
  *   swatch ──▶ the ground/surface/accent chip the picker paints
  *   pip    ──▶ which inline-SVG station glyph `PipShape` draws
  *   art    ──▶ which inline-SVG backdrop `BackdropArt` tiles behind the world
  *   shader ──▶ the MeshGradient uniforms so the GPU sky matches the mood
+ *   sound  ──▶ the interface-cue voice `audio/ui-sound.ts` synthesizes
  *
- * The colour tokens themselves live in `index.css` as `[data-theme="…"]` blocks;
- * this module only carries the catalog the UI iterates over plus the tiny DOM
- * write that swaps the active block. Parsing is total: an unknown id always
+ * The structural side of a skin — its type, geometry, motion, and material
+ * tokens (`--font-display`, `--panel-radius`, `--dur-base`, `--grain`, …) —
+ * lives entirely in `index.css`'s `[data-theme]` blocks, so presentation never
+ * drifts from the registry. This module carries only the catalog the UI
+ * iterates over plus the tiny DOM write that swaps the active block. Parsing is total: an unknown id always
  * falls back to the default rather than throwing, matching the total-parse
  * store pattern used across the app.
  */
@@ -86,6 +89,24 @@ export type ShaderProfile = {
   grain: number;
 };
 
+/**
+ * The voice a skin's interface speaks in. One cue id per timbre family — a
+ * tight blip, a pitch-bent cartoon boing, a struck woodblock, a resonant gong,
+ * or a membrane thump — tuned by pitch/decay/gain. `audio/ui-sound.ts` turns
+ * these numbers into a WebAudio recipe; no audio files ship with the app.
+ */
+export type SoundCueId = "blip" | "boing" | "woodblock" | "gong" | "membrane";
+
+export type SoundProfile = {
+  cue: SoundCueId;
+  /** Fundamental frequency in Hz. */
+  pitch: number;
+  /** Envelope decay in seconds. */
+  decay: number;
+  /** Relative loudness before the master cue gain (0..1). */
+  gain: number;
+};
+
 /** Human-readable section titles, keyed by family. */
 export const FAMILY_LABELS: Record<ThemeFamily, string> = {
   signal: "Signature",
@@ -111,10 +132,14 @@ export type ThemeDefinition = {
   pip: PipShapeId;
   art: BackdropArtId;
   shader: ShaderProfile;
+  sound: SoundProfile;
   swatch: [string, string, string];
 };
 
-export const THEMES: readonly ThemeDefinition[] = [
+/** A registry row before its sound profile is joined in (`THEME_SOUNDS`). */
+type ThemeSeed = Omit<ThemeDefinition, "sound">;
+
+export const THEMES: readonly ThemeSeed[] = [
   {
     id: "signal",
     label: "Signal",
@@ -269,6 +294,29 @@ export const THEMES: readonly ThemeDefinition[] = [
 
 export const DEFAULT_THEME_ID: ThemeId = "signal";
 
+/**
+ * Each skin's interface voice, keyed by theme id. Kept beside the registry (not
+ * inline) so the audio layer reads as one coherent table and a missing entry
+ * fails a totality check rather than silently muting a theme.
+ */
+export const THEME_SOUNDS: Record<ThemeId, SoundProfile> = {
+  signal: { cue: "blip", pitch: 880, decay: 0.07, gain: 0.5 },
+  water: { cue: "blip", pitch: 620, decay: 0.13, gain: 0.5 },
+  air: { cue: "blip", pitch: 1046, decay: 0.1, gain: 0.45 },
+  fire: { cue: "blip", pitch: 500, decay: 0.06, gain: 0.55 },
+  earth: { cue: "blip", pitch: 320, decay: 0.16, gain: 0.55 },
+  bubblegum: { cue: "boing", pitch: 660, decay: 0.24, gain: 0.5 },
+  comic: { cue: "boing", pitch: 540, decay: 0.14, gain: 0.5 },
+  sakura: { cue: "woodblock", pitch: 1200, decay: 0.09, gain: 0.45 },
+  matsuri: { cue: "woodblock", pitch: 900, decay: 0.11, gain: 0.5 },
+  lantern: { cue: "gong", pitch: 440, decay: 0.55, gain: 0.4 },
+  jade: { cue: "gong", pitch: 620, decay: 0.42, gain: 0.4 },
+  rajasthan: { cue: "membrane", pitch: 300, decay: 0.22, gain: 0.55 },
+  kerala: { cue: "membrane", pitch: 360, decay: 0.2, gain: 0.55 },
+  punjab: { cue: "membrane", pitch: 420, decay: 0.15, gain: 0.55 },
+  tamil: { cue: "membrane", pitch: 480, decay: 0.17, gain: 0.55 },
+};
+
 const THEME_IDS = new Set<string>(THEMES.map((theme) => theme.id));
 
 /** True only for a known theme id — total over any unknown input. */
@@ -278,7 +326,8 @@ export function isThemeId(value: unknown): value is ThemeId {
 
 /** Fall back to the default definition rather than ever returning undefined. */
 export function getThemeDefinition(id: ThemeId): ThemeDefinition {
-  return THEMES.find((theme) => theme.id === id) ?? THEMES[0]!;
+  const seed = THEMES.find((theme) => theme.id === id) ?? THEMES[0]!;
+  return { ...seed, sound: THEME_SOUNDS[seed.id] };
 }
 
 /** The next theme in registry order, wrapping — for a keyboard/cycle affordance. */

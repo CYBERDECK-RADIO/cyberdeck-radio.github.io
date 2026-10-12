@@ -43,6 +43,7 @@ import { useScreensaver } from '@/modes/use-screensaver';
 import { useSleepTimer } from '@/modes/use-sleep-timer';
 import NotFound from '@/pages/not-found';
 import { usePreferences } from '@/preferences/use-preferences';
+import { useThemeCues } from '@/preferences/use-theme-cues';
 import { getThemeDefinition } from '@/preferences/themes';
 import {
   EMPTY_FILTERS,
@@ -54,6 +55,7 @@ import {
   type StationFilters as StationFiltersState,
   type StationSort,
 } from '@/stations/filter-stations';
+import { findClosestLocaleStation, getLocaleCountryCode } from '@/stations/locale-channel';
 import { pickRandomStation } from '@/stations/random-station';
 import { getGardenCatalogInfo, type GardenCatalogInfo } from '@/stations/radio-garden';
 import { recordChannel, resetRecentChannels } from '@/stations/recent-channels';
@@ -114,6 +116,8 @@ function Home() {
   const [allStations, setAllStations] = useState<Station[]>([]);
   const [searchMatchedStations, setSearchMatchedStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  /** Latches once the first-visit lock has been decided (see the effect below). */
+  const [visitResolved, setVisitResolved] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'empty' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -131,7 +135,9 @@ function Home() {
   const listRef = useRef<HTMLElement>(null);
   const [controller] = useState(() => createAudioController({ createAnalyser: createCaptureAnalyser }));
   const playback = useSyncExternalStore(controller.subscribe, controller.getState);
-  const { volume, setVolume, theme, setTheme, cycleTheme } = usePreferences();
+  const { volume, setVolume, theme, setTheme, cycleTheme, soundCues, toggleSoundCues } =
+    usePreferences();
+  useThemeCues(theme, soundCues);
   /** What an unmute should restore — the slider remembers, not the mute. */
   const lastAudibleVolumeRef = useRef(volume > 0 ? volume : FALLBACK_VOLUME);
   const healthById = useStationHealth();
@@ -144,6 +150,12 @@ function Home() {
   if (deepLinkRef.current === undefined) {
     deepLinkRef.current = parseStationIdFromSearch(window.location.search);
   }
+  /** Set when the deep link wins the first lock, so the visit restore stands down. */
+  const deepLinkLockedRef = useRef(false);
+  /** One-shot latch for the first-visit restore/closest-locale decision. */
+  const visitResolvedRef = useRef(false);
+  /** The visitor's locale country, read once from the browser. */
+  const [localeCountry] = useState(() => getLocaleCountryCode());
   // The saver only dozes off while the directory is shut; waking is always live.
   const { engaged: screensaver, engage: engageScreensaver, release: wakeScreensaver } =
     useScreensaver({ enabled: !listOpen });
@@ -204,6 +216,8 @@ function Home() {
     if (found) {
       setSelectedStation(found);
       deepLinkRef.current = null;
+      deepLinkLockedRef.current = true;
+      setVisitResolved(true);
       return;
     }
     if (status === 'success' || status === 'empty') deepLinkRef.current = null;
@@ -580,6 +594,35 @@ function Home() {
     [matchedStations],
   );
 
+  // A first visit restores whatever this browser last tuned. When that channel
+  // has left the directory (or was pruned as offline/insecure), the deck falls
+  // back to the closest channel in the visitor's locale country, then to the
+  // saved snapshot if the catalog never arrived at all. The decision is made
+  // once, after the catalog settles, and never overrides a shared ?station=
+  // link or an explicit pick; until it is made the map's own nearest-centre
+  // lock stays off so the two never race for the dossier.
+  useEffect(() => {
+    if (visitResolvedRef.current) return;
+    if (status !== 'success' && status !== 'empty') return;
+    if (deepLinkLockedRef.current || deepLinkRef.current) return;
+    visitResolvedRef.current = true;
+    setVisitResolved(true);
+    if (selectedStation) return;
+
+    const lastVisited = recentStations[0] ?? null;
+    const freshLastVisited = lastVisited
+      ? usableStations.find((station) => station.id === lastVisited.id) ?? null
+      : null;
+    const target =
+      freshLastVisited ??
+      findClosestLocaleStation(usableStations, localeCountry) ??
+      (status === 'empty' ? lastVisited : null);
+    if (!target) return;
+
+    setSelectedStation(target);
+    void controller.play(target);
+  }, [status, recentStations, usableStations, selectedStation, localeCountry, controller]);
+
   // Focus the first matched station when a search returns matches and nothing is locked yet.
   useEffect(() => {
     if (!submittedQuery.trim()) return;
@@ -735,11 +778,14 @@ function Home() {
           onStartScreensaver={beginScreensaver}
           theme={theme}
           onSelectTheme={setTheme}
+          soundCues={soundCues}
+          onToggleSoundCues={toggleSoundCues}
         />
 
         <AtlasWorld
           stations={usableMapStations}
           selectedStationId={selectedStation?.id ?? null}
+          autoLockEnabled={visitResolved}
           healthById={healthById}
           pinnedIds={pinnedIds}
           matchedIds={matchedIds}

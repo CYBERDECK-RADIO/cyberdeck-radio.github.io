@@ -5,11 +5,14 @@ import {
   DEFAULT_THEME_ID,
   THEMES,
   THEME_ATTRIBUTE,
+  THEME_SOUNDS,
   applyThemeToDocument,
   getThemeDefinition,
   isThemeId,
   nextThemeId,
 } from "./themes";
+
+const CUES = ["blip", "boing", "woodblock", "gong", "membrane"] as const;
 
 afterEach(() => {
   document.documentElement.removeAttribute(THEME_ATTRIBUTE);
@@ -35,6 +38,26 @@ describe("getThemeDefinition", () => {
       expect(theme.art).toBeTruthy();
       expect(theme.shader.speed).toBeGreaterThan(0);
       expect(theme.swatch).toHaveLength(3);
+    }
+  });
+});
+
+describe("sound profiles", () => {
+  it("gives every theme a defined profile with sane numbers", () => {
+    for (const theme of THEMES) {
+      const sound = THEME_SOUNDS[theme.id];
+      expect(sound).toBeDefined();
+      expect(CUES).toContain(sound.cue);
+      expect(sound.pitch).toBeGreaterThan(0);
+      expect(sound.decay).toBeGreaterThan(0);
+      expect(sound.gain).toBeGreaterThan(0);
+      expect(sound.gain).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("joins the same profile into every theme definition", () => {
+    for (const theme of THEMES) {
+      expect(getThemeDefinition(theme.id).sound).toEqual(THEME_SOUNDS[theme.id]);
     }
   });
 });

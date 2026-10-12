@@ -52,11 +52,13 @@ describe("parsePreferences", () => {
         volume: 0.25,
         visualizerStyle: "vu",
         theme: DEFAULT_PREFERENCES.theme,
+        soundCues: false,
       }),
     ).toEqual({
       volume: 0.25,
       visualizerStyle: "vu",
       theme: DEFAULT_PREFERENCES.theme,
+      soundCues: false,
     });
   });
 
@@ -65,6 +67,7 @@ describe("parsePreferences", () => {
       volume: 1,
       visualizerStyle: DEFAULT_PREFERENCES.visualizerStyle,
       theme: DEFAULT_PREFERENCES.theme,
+      soundCues: DEFAULT_PREFERENCES.soundCues,
     });
   });
 
@@ -73,6 +76,7 @@ describe("parsePreferences", () => {
       volume: 0.3,
       visualizerStyle: DEFAULT_PREFERENCES.visualizerStyle,
       theme: DEFAULT_PREFERENCES.theme,
+      soundCues: DEFAULT_PREFERENCES.soundCues,
     });
   });
 
@@ -81,6 +85,16 @@ describe("parsePreferences", () => {
       volume: 0.5,
       visualizerStyle: DEFAULT_PREFERENCES.visualizerStyle,
       theme: DEFAULT_PREFERENCES.theme,
+      soundCues: DEFAULT_PREFERENCES.soundCues,
+    });
+  });
+
+  it("falls back to the default sound cues for a non-boolean stored value", () => {
+    expect(parsePreferences({ volume: 0.5, soundCues: "loud" })).toEqual({
+      volume: 0.5,
+      visualizerStyle: DEFAULT_PREFERENCES.visualizerStyle,
+      theme: DEFAULT_PREFERENCES.theme,
+      soundCues: DEFAULT_PREFERENCES.soundCues,
     });
   });
 });

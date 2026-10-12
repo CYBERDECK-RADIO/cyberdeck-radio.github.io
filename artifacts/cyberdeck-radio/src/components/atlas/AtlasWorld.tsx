@@ -56,6 +56,12 @@ import {
 type AtlasWorldProps = {
   stations: Station[];
   selectedStationId: string | null;
+  /**
+   * Whether the "nothing locked yet" nearest-centre lock may fire. The shell
+   * holds it off until its first-visit restore/closest-locale decision lands,
+   * so the map does not race the deck for the dossier on a cold load.
+   */
+  autoLockEnabled?: boolean;
   healthById?: ReadonlyMap<string, HealthStatus>;
   /** Pinned channels, drawn with a kept-channel ring among the pips. */
   pinnedIds?: ReadonlySet<string>;
@@ -223,6 +229,7 @@ function pipLabel(station: Station): string {
 export default function AtlasWorld({
   stations,
   selectedStationId,
+  autoLockEnabled = true,
   healthById = EMPTY_HEALTH,
   pinnedIds = EMPTY_PINNED,
   matchedIds = EMPTY_PINNED,
@@ -355,14 +362,16 @@ export default function AtlasWorld({
   }, [animateTo, selectedStationId, stations]);
 
   // Nothing locked yet: put the nearest signal on the card (lock only — no audio).
+  // The shell can hold this off while it decides a first-visit restore.
   useEffect(() => {
+    if (!autoLockEnabled) return;
     if (selectedStationId !== null) return;
     const nearest = findNearestStation(stations, centerCoordinates(viewRef.current));
     if (nearest) {
       autoLockRef.current = true;
       selectRef.current(nearest.id);
     }
-  }, [selectedStationId, stations]);
+  }, [selectedStationId, stations, autoLockEnabled]);
 
   // A new result set (scan, source switch, facet) retires any open picker:
   // the channels it listed may no longer exist.

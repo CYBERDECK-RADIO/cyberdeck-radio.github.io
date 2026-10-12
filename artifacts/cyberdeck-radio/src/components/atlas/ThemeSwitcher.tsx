@@ -6,9 +6,11 @@
  *
  * Lives in the mode dock so it survives zen (which hides the header). The label
  * reads "Theme" (not the current theme's name) so the control is discoverable,
- * and each row previews the skin's actual station-pin glyph on its own ground
- * colour. The menu groups themes by family (Elements, Cartoon, Japan, China,
- * India), closes on Escape or an outside click, and returns focus on dismissal.
+ * and each row previews the skin on its own structural tokens: `data-theme`
+ * rides on the row so its ground colour, button radius, and type specimen
+ * ("Aa", the skin's display face) resolve locally. The menu groups themes by
+ * family (Elements, Cartoon, Japan, China, India), closes on Escape or an
+ * outside click, and returns focus on dismissal.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -79,6 +81,7 @@ export default function ThemeSwitcher({ theme, onSelectTheme }: ThemeSwitcherPro
         <span
           className="theme-switcher__chip"
           aria-hidden="true"
+          data-theme={current.id}
           style={{ background: current.swatch[0], color: current.swatch[2] }}
         >
           <svg viewBox="-7 -7 14 14">
@@ -107,6 +110,7 @@ export default function ThemeSwitcher({ theme, onSelectTheme }: ThemeSwitcherPro
                     role="option"
                     aria-selected={selected}
                     className={`theme-switcher__option${selected ? " is-active" : ""}`}
+                    data-theme={option.id}
                     onClick={() => {
                       onSelectTheme(option.id);
                       setOpen(false);
@@ -117,11 +121,15 @@ export default function ThemeSwitcher({ theme, onSelectTheme }: ThemeSwitcherPro
                     <span
                       className="theme-switcher__chip"
                       aria-hidden="true"
+                      data-theme={option.id}
                       style={{ background: option.swatch[0], color: option.swatch[2] }}
                     >
                       <svg viewBox="-7 -7 14 14">
                         <PipShape shape={option.pip} />
                       </svg>
+                    </span>
+                    <span className="theme-switcher__option-sample" aria-hidden="true">
+                      Aa
                     </span>
                     <span className="theme-switcher__option-copy">
                       <span className="theme-switcher__option-label">{option.label}</span>
