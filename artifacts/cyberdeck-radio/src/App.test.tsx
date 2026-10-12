@@ -33,9 +33,9 @@ type DirectoryRecord = {
 };
 
 /**
- * Answers both catalog shapes the shell can ask for — the Radio Browser search
- * array (AIRWAVES) and the baked Radio Garden catalog object — so these tests
- * hold whatever source the app opens on.
+ * Answers every catalog shape the merged directory asks for — the baked Radio
+ * Garden catalog object, an empty SomaFM lineup, and the Radio Browser search
+ * array — so these tests hold the combined single-group read on the app.
  */
 function stubDirectory(records: DirectoryRecord[]) {
   const gardenStations = records.map((record) => ({
@@ -58,15 +58,21 @@ function stubDirectory(records: DirectoryRecord[]) {
   vi.stubGlobal(
     "fetch",
     vi.fn().mockImplementation((input: URL | string) => {
-      const body = String(input).includes("radio-garden.json")
-        ? {
+      const url = String(input);
+      if (url.includes("radio-garden.json")) {
+        return Promise.resolve(
+          jsonResponse({
             generatedAt: "2026-10-11T00:00:00.000Z",
             source: "radio.garden",
             count: gardenStations.length,
             stations: gardenStations,
-          }
-        : records;
-      return Promise.resolve(jsonResponse(body));
+          }),
+        );
+      }
+      if (url.includes("somafm.com/channels.json")) {
+        return Promise.resolve(jsonResponse({ channels: [] }));
+      }
+      return Promise.resolve(jsonResponse(records));
     }),
   );
 }
@@ -101,12 +107,21 @@ describe("Radio Atlas home view", () => {
     expect(screen.getByTestId("results-region")).toBeTruthy();
   });
 
-  it("credits the active catalog source in the footer", () => {
+  it("credits every contributing catalog in the footer", () => {
     render(<App />);
 
     const credit = screen.getByTestId("source-credit");
     expect(credit.textContent).toContain("RADIO.GARDEN");
-    expect(credit.querySelector('a')?.getAttribute("href")).toBe("https://radio.garden/");
+    expect(credit.textContent).toContain("RADIO-BROWSER.INFO");
+    expect(credit.textContent).toContain("SOMAFM.COM");
+    const links = Array.from(credit.querySelectorAll("a")).map((link) =>
+      link.getAttribute("href"),
+    );
+    expect(links).toEqual([
+      "https://radio.garden/",
+      "https://www.radio-browser.info/",
+      "https://somafm.com/",
+    ]);
   });
 
   it("keeps the world map on screen rather than deferring it behind a tab", () => {
@@ -166,18 +181,19 @@ describe("Radio Atlas home view", () => {
     expect(document.getElementById("player")?.getAttribute("tabindex")).toBe("-1");
   });
 
-  it("answers the source switch with press-state semantics", async () => {
+  it("reads the directory as one merged group with no source switcher", async () => {
     render(<App />);
 
     await waitFor(() =>
       expect(screen.getByTestId("state-search-idle")).toBeTruthy(),
     );
-    const sourceGroup = screen.getByRole("group", { name: "Channel source" });
-    expect(sourceGroup.querySelectorAll('[role="tab"]').length).toBe(0);
-    const options = Array.from(sourceGroup.querySelectorAll("button"));
-    const pressed = options.filter((option) => option.getAttribute("aria-pressed") === "true");
-    // The atlas opens on the scraped Radio Garden catalog.
-    expect(pressed.map((option) => option.textContent)).toEqual(["RADIO GARDEN"]);
+    // No per-catalog switcher: every radio channel belongs to a single group.
+    expect(screen.queryByRole("group", { name: "Channel source" })).toBeNull();
+    expect(screen.queryByText("AIRWAVES")).toBeNull();
+    expect(screen.queryByText("SOMA FM")).toBeNull();
+    expect(screen.queryByText("RADIO GARDEN")).toBeNull();
+    // The saved shelves still offer their own switcher.
+    expect(screen.getByRole("group", { name: "Saved channels" })).toBeTruthy();
   });
 
   it("lists the scraped catalog while the atlas keeps the first paint", async () => {

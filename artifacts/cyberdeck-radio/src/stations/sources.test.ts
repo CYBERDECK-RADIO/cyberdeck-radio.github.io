@@ -2,86 +2,38 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetGardenStationsCache } from "./radio-garden";
 import { resetSomaChannelsCache } from "./somafm";
-import { listStationSources, STATION_SOURCES } from "./sources";
+import { CATALOG_CREDITS, getStations } from "./sources";
 
-describe("station sources", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    resetSomaChannelsCache();
-    resetGardenStationsCache();
+const jsonResponse = (body: unknown): Response =>
+  new Response(JSON.stringify(body), {
+    headers: { "Content-Type": "application/json" },
   });
 
-  it("lists the airwaves, soma, and garden catalogs", () => {
-    expect(listStationSources().map((source) => source.id)).toEqual([
-      "airwaves",
-      "soma",
-      "garden",
-    ]);
-    expect(STATION_SOURCES.airwaves.global).toBe(true);
-    expect(STATION_SOURCES.soma.global).toBe(false);
-    expect(STATION_SOURCES.garden.global).toBe(true);
-  });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  resetSomaChannelsCache();
+  resetGardenStationsCache();
+});
 
-  it("routes a query to the radio-browser provider", async () => {
-    const fetchMock = vi.fn(() =>
-      Promise.resolve(
-        new Response(
-          JSON.stringify([
-            { stationuuid: "x", name: "n", url: "https://s.example/a" },
-          ]),
-          { headers: { "Content-Type": "application/json" } },
-        ),
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    const stations = await STATION_SOURCES.airwaves.getStations({ query: "jazz" });
-
-    expect(stations).toHaveLength(1);
-    const urls = fetchMock.mock.calls.map(
-      ([requestUrl]: [URL]) => new URL(requestUrl.toString()).searchParams,
-    );
-    expect(urls.length).toBe(4);
-    expect(urls.some((params) => params.get("name") === "jazz")).toBe(true);
-    expect(urls.some((params) => params.get("state") === "jazz")).toBe(true);
-  });
-
-  it("serves the soma catalog when no query is given", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() =>
-        Promise.resolve(
-          new Response(
-            JSON.stringify({
-              channels: [{ id: "salt", title: "Secret Agent", genre: "downtempo|electronic" }],
-            }),
-            { headers: { "Content-Type": "application/json" } },
-          ),
-        ),
-      ),
-    );
-
-    const stations = await STATION_SOURCES.soma.getStations({});
-
-    expect(stations).toEqual([
-      {
-        id: "soma:salt",
-        name: "Secret Agent",
-        genres: ["downtempo", "electronic"],
-        streams: [{ url: "https://ice2.somafm.com/salt-128-mp3", codec: "MP3", bitrate: 128 }],
-        homepage: "https://somafm.com/salt/",
-        checkUrl: "https://somafm.com/salt.pls",
-      },
+describe("unified station directory", () => {
+  it("credits every contributing catalog", () => {
+    expect(CATALOG_CREDITS.map((credit) => credit.label)).toEqual([
+      "RADIO.GARDEN",
+      "RADIO-BROWSER.INFO",
+      "SOMAFM.COM",
     ]);
   });
 
-  it("serves the scraped Radio Garden catalog", async () => {
+  it("merges the default listings from every catalog into one group", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() =>
-        Promise.resolve(
-          new Response(
-            JSON.stringify({
+      vi.fn().mockImplementation((input: URL | string) => {
+        const url = String(input);
+        if (url.includes("radio-garden.json")) {
+          return Promise.resolve(
+            jsonResponse({
+              generatedAt: "2026-10-11T00:00:00.000Z",
+              count: 1,
               stations: [
                 {
                   id: "garden:abc",
@@ -94,24 +46,189 @@ describe("station sources", () => {
                 },
               ],
             }),
-            { headers: { "Content-Type": "application/json" } },
-          ),
-        ),
-      ),
+          );
+        }
+        if (url.includes("somafm.com/channels.json")) {
+          return Promise.resolve(
+            jsonResponse({
+              channels: [
+                {
+                  id: "salt",
+                  title: "Secret Agent",
+                  genre: "downtempo|electronic",
+                },
+              ],
+            }),
+          );
+        }
+        return Promise.resolve(
+          jsonResponse([
+            {
+              stationuuid: "live-1",
+              name: "World Service",
+              url: "https://stream.example/world",
+              tags: "world, news",
+              countrycode: "FR",
+            },
+          ]),
+        );
+      }),
     );
 
-    const stations = await STATION_SOURCES.garden.getStations({});
+    const stations = await getStations({});
 
-    expect(stations).toEqual([
-      {
-        id: "garden:abc",
-        name: "Jazz Con Class Radio",
-        country: "United States",
-        countryCode: "US",
-        coordinates: [-73.98, 40.75],
-        genres: [],
-        streams: [{ url: "https://stream.example/jazz" }],
-      },
-    ]);
+    expect(stations.map((station) => station.name)).toEqual(
+      expect.arrayContaining(["Jazz Con Class Radio", "Secret Agent", "World Service"]),
+    );
+  });
+
+  it("collapses a station that crosses catalogs under a shared listen URL", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((input: URL | string) => {
+        const url = String(input);
+        if (url.includes("radio-garden.json")) {
+          return Promise.resolve(
+            jsonResponse({
+              generatedAt: "2026-10-11T00:00:00.000Z",
+              count: 1,
+              stations: [
+                {
+                  id: "garden:same",
+                  name: "Garden Version",
+                  countryCode: "FR",
+                  genres: [],
+                  streams: [{ url: "https://stream.example/twin" }],
+                },
+              ],
+            }),
+          );
+        }
+        if (url.includes("somafm.com/channels.json")) {
+          return Promise.resolve(jsonResponse({ channels: [] }));
+        }
+        return Promise.resolve(
+          jsonResponse([
+            {
+              stationuuid: "live-same",
+              name: "Live Version",
+              url: "https://stream.example/twin",
+              tags: "world",
+              countrycode: "FR",
+            },
+          ]),
+        );
+      }),
+    );
+
+    const stations = await getStations({});
+
+    // One channel, not two: the geotagged crawl wins the de-dupe.
+    expect(stations).toHaveLength(1);
+    expect(stations[0].id).toBe("garden:same");
+    expect(stations[0].name).toBe("Garden Version");
+  });
+
+  it("answers a query from every catalog at once", async () => {
+    const gardenStation = {
+      id: "garden:abc",
+      name: "Jazz Con Class Radio",
+      country: "United States",
+      countryCode: "US",
+      genres: [],
+      streams: [{ url: "https://stream.example/jazz" }],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((input: URL | string) => {
+        const url = String(input);
+        if (url.includes("radio-garden.json")) {
+          return Promise.resolve(
+            jsonResponse({
+              generatedAt: "2026-10-11T00:00:00.000Z",
+              count: 1,
+              stations: [gardenStation],
+            }),
+          );
+        }
+        if (url.includes("somafm.com/channels.json")) {
+          return Promise.resolve(
+            jsonResponse({
+              channels: [
+                { id: "flavor", title: "Jazz Flavors", genre: "jazz" },
+                { id: "salt", title: "Secret Agent", genre: "downtempo" },
+              ],
+            }),
+          );
+        }
+        const searchQuery = new URL(url);
+        const query = (
+          searchQuery.searchParams.get("name") ??
+          searchQuery.searchParams.get("tag") ??
+          searchQuery.searchParams.get("country") ??
+          searchQuery.searchParams.get("state") ??
+          ""
+        ).toLowerCase();
+        const records = [
+          {
+            stationuuid: "live-jazz",
+            name: "Jazz Radio 24",
+            url: "https://stream.example/jazz24",
+            tags: "jazz",
+            countrycode: "US",
+          },
+          {
+            stationuuid: "live-rock",
+            name: "Rock Box",
+            url: "https://stream.example/rock",
+            tags: "rock",
+            countrycode: "GB",
+          },
+        ];
+        return Promise.resolve(
+          jsonResponse(
+            records.filter(
+              (record) =>
+                record.name.toLowerCase().includes(query) ||
+                (record.tags ?? "").includes(query),
+            ),
+          ),
+        );
+      }),
+    );
+
+    const stations = await getStations({ query: "jazz" });
+
+    expect(stations.map((station) => station.name)).toEqual(
+      expect.arrayContaining(["Jazz Con Class Radio", "Jazz Flavors", "Jazz Radio 24"]),
+    );
+    expect(stations.map((station) => station.name)).not.toContain("Secret Agent");
+    expect(stations.map((station) => station.name)).not.toContain("Rock Box");
+  });
+
+  it("returns an empty group when no catalog matches a query", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((input: URL | string) => {
+        const url = String(input);
+        if (url.includes("radio-garden.json")) {
+          return Promise.resolve(
+            jsonResponse({
+              generatedAt: "2026-10-11T00:00:00.000Z",
+              count: 0,
+              stations: [],
+            }),
+          );
+        }
+        if (url.includes("somafm.com/channels.json")) {
+          return Promise.resolve(jsonResponse({ channels: [] }));
+        }
+        return Promise.resolve(jsonResponse([]));
+      }),
+    );
+
+    const stations = await getStations({ query: "nothing matches" });
+
+    expect(stations).toEqual([]);
   });
 });

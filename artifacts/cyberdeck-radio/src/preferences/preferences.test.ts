@@ -47,16 +47,24 @@ describe("parsePreferences", () => {
   });
 
   it("keeps valid stored values", () => {
-    expect(parsePreferences({ volume: 0.25, visualizerStyle: "vu" })).toEqual({
+    expect(
+      parsePreferences({
+        volume: 0.25,
+        visualizerStyle: "vu",
+        theme: DEFAULT_PREFERENCES.theme,
+      }),
+    ).toEqual({
       volume: 0.25,
       visualizerStyle: "vu",
+      theme: DEFAULT_PREFERENCES.theme,
     });
   });
 
-  it("clamps volume and rejects unknown styles", () => {
-    expect(parsePreferences({ volume: 5, visualizerStyle: "bars" })).toEqual({
+  it("clamps volume and rejects unknown styles and themes", () => {
+    expect(parsePreferences({ volume: 5, visualizerStyle: "bars", theme: "not-a-real-theme" })).toEqual({
       volume: 1,
       visualizerStyle: DEFAULT_PREFERENCES.visualizerStyle,
+      theme: DEFAULT_PREFERENCES.theme,
     });
   });
 
@@ -64,6 +72,15 @@ describe("parsePreferences", () => {
     expect(parsePreferences({ volume: 0.3 })).toEqual({
       volume: 0.3,
       visualizerStyle: DEFAULT_PREFERENCES.visualizerStyle,
+      theme: DEFAULT_PREFERENCES.theme,
+    });
+  });
+
+  it("ignores unknown stored fields", () => {
+    expect(parsePreferences({ volume: 0.5, mystery: "x" })).toEqual({
+      volume: 0.5,
+      visualizerStyle: DEFAULT_PREFERENCES.visualizerStyle,
+      theme: DEFAULT_PREFERENCES.theme,
     });
   });
 });

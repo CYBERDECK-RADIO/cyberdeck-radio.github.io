@@ -6,27 +6,28 @@ streams that browsers refuse to play.
 
 ## Source attribution
 
-| Source | Used for | Link |
-| --- | --- | --- |
-| radio.garden | The station directory and map pins (baked at build time) | https://radio.garden/ |
-| radio-browser.info | Optional AIRWAVES source: live directory search | https://www.radio-browser.info/ |
-| Natural Earth | Country outlines drawn on the receiver map | https://www.naturalearthdata.com/ |
-| Paper Shaders | Decorative WebGL mesh-gradient backdrop (Apache-2.0; attribution not required, credited here) | https://shaders.paper.design/ |
+| Source             | Used for                                                                                      | Link                              |
+| ------------------ | --------------------------------------------------------------------------------------------- | --------------------------------- |
+| radio.garden       | The station directory and map pins (baked at build time)                                      | https://radio.garden/             |
+| radio-browser.info | Optional AIRWAVES source: live directory search                                               | https://www.radio-browser.info/   |
+| Natural Earth      | Country outlines drawn on the receiver map                                                    | https://www.naturalearthdata.com/ |
+| Paper Shaders      | Decorative WebGL mesh-gradient backdrop (Apache-2.0; attribution not required, credited here) | https://shaders.paper.design/     |
 
 The default directory ships with the app. radio.garden's JSON API is CORS-locked
 to its own origin, so a scheduled GitHub Action crawls it in Node and bakes every
 place and channel (~38k, with coordinates and the station's stable HTTPS listen
-URL) into `public/radio-garden.json`, also published gzipped. The AIRWAVES source
-still queries the public radio-browser.info API live
-(`https://de1.api.radio-browser.info`), and the footer credits whichever source
-is active. CyberDeck Radio does not host, proxy, or re-broadcast any audio;
-playback connects the browser directly to the station's own stream URL — for the
-baked catalog that is radio.garden's `channel.mp3` listen endpoint, which
-redirects to the broadcaster's stream. The map itself is hand-rolled SVG over the
-bundled Natural Earth outlines; no tile server or API key is required. A
-decorative WebGL backdrop (Paper Shaders, Apache-2.0) renders a themed
-mesh-gradient sky behind the map — purely atmospheric, with no bearing on
-search, selection, or playback.
+URL) into `public/radio-garden.json`, also published gzipped. The directory also
+reads the public radio-browser.info API live
+(`https://de1.api.radio-browser.info`) and the SomaFM channel lineup; all three
+catalogs are merged into one undifferentiated group when the app opens, and the
+footer credits every contributing catalog. CyberDeck Radio does not host, proxy,
+or re-broadcast any audio; playback connects the browser directly to the
+station's own stream URL — for the baked catalog that is radio.garden's
+`channel.mp3` listen endpoint, which redirects to the broadcaster's stream. The
+map itself is hand-rolled SVG over the bundled Natural Earth outlines; no tile
+server or API key is required. A decorative WebGL backdrop (Paper Shaders,
+Apache-2.0) renders a themed mesh-gradient sky behind the map — purely
+atmospheric, with no bearing on search, selection, or playback.
 
 ## Known limitations
 
@@ -64,11 +65,14 @@ search, selection, or playback.
 
 ## Privacy and scope confirmation
 
-- **No telemetry or analytics.** The app ships no analytics, tracking, or
-  third-party scripts. Every map path, the station catalog, and the SomaFM
-  lineup ship in the bundle or as same-origin static files; the only live
-  network calls are the stream audio itself and the optional AIRWAVES source's
-  radio-browser.info requests.
+- **Analytics are opt-in at build time.** The app ships no analytics, tracking,
+  or third-party scripts unless a Google Analytics 4 measurement ID is provided
+  via the `VITE_GA_ID` environment variable at build time — in which case only
+  gtag.js pageview collection is loaded, with IP anonymization on. With no
+  `VITE_GA_ID` the bundle stays clean-shipping: every map path, the station
+  catalog, and the SomaFM lineup ship in the bundle or as same-origin static
+  files, and the only live network calls are the stream audio itself and the
+  radio-browser.info directory requests.
 - **No PWA or service worker.** There is no `manifest`, no service worker, and
   no install prompt.
 - **No offline-stream claims.** Playback always requires a live network

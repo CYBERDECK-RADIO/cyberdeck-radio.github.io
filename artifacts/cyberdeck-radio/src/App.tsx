@@ -6,7 +6,7 @@
  *     canvas:  full-bleed vector world with station pips (the hero)
  *     dossier: the only transport surface — identity, status, meter, volume
  *     ruler:   synthetic FM band; drag it to lock the nearest carrier
- *     list:    a slide-over directory (filters, source switch, rows)
+ *     list:    a slide-over directory (filters, saved shelves, rows)
  *     dock:    view modes — zen (chrome off) and screen saver (atlas asleep)
  *
  * query ──▶ radio-browser ──▶ Station[] ──▶ filters ──▶ list + pips + ruler
@@ -35,6 +35,7 @@ import FrequencyRuler from '@/components/atlas/FrequencyRuler';
 import ModeDock from '@/components/atlas/ModeDock';
 import ScreensaverOverlay from '@/components/atlas/ScreensaverOverlay';
 import ShaderBackdrop from '@/components/atlas/ShaderBackdrop';
+import BackdropArt from '@/components/atlas/theme/BackdropArt';
 import { describeStageCaption } from '@/components/stage-caption';
 import { ErrorBoundary } from '@/components/error-boundary';
 import StationFilters from '@/components/StationFilters';
@@ -42,12 +43,14 @@ import { useScreensaver } from '@/modes/use-screensaver';
 import { useSleepTimer } from '@/modes/use-sleep-timer';
 import NotFound from '@/pages/not-found';
 import { usePreferences } from '@/preferences/use-preferences';
+import { getThemeDefinition } from '@/preferences/themes';
 import {
   EMPTY_FILTERS,
   collectFilterOptions,
   filterStations,
   hasActiveFilters,
   sortStations,
+  stationMatchesQuery,
   type StationFilters as StationFiltersState,
   type StationSort,
 } from '@/stations/filter-stations';
@@ -55,7 +58,7 @@ import { pickRandomStation } from '@/stations/random-station';
 import { getGardenCatalogInfo, type GardenCatalogInfo } from '@/stations/radio-garden';
 import { recordChannel, resetRecentChannels } from '@/stations/recent-channels';
 import { hasSecureStream } from '@/stations/secure-stream';
-import { listStationSources, STATION_SOURCES, type StationSourceId } from '@/stations/sources';
+import { CATALOG_CREDITS, getStations } from '@/stations/sources';
 import { registerStations } from '@/stations/stream-health';
 import { togglePinnedChannel } from '@/stations/pinned-channels';
 import { useStationHealth } from '@/stations/use-station-health';
@@ -108,13 +111,14 @@ function Home() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [stations, setStations] = useState<Station[]>([]);
+  const [allStations, setAllStations] = useState<Station[]>([]);
+  const [searchMatchedStations, setSearchMatchedStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'empty' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [filters, setFilters] = useState<StationFiltersState>(EMPTY_FILTERS);
   const [sort, setSort] = useState<StationSort>('relevance');
-  const [sourceId, setSourceId] = useState<StationSourceId>('garden');
   const [listOpen, setListOpen] = useState(false);
   const [listLimit, setListLimit] = useState(DIRECTORY_PAGE_SIZE);
   const [catalogInfo, setCatalogInfo] = useState<GardenCatalogInfo | null>(null);
@@ -127,7 +131,7 @@ function Home() {
   const listRef = useRef<HTMLElement>(null);
   const [controller] = useState(() => createAudioController({ createAnalyser: createCaptureAnalyser }));
   const playback = useSyncExternalStore(controller.subscribe, controller.getState);
-  const { volume, setVolume } = usePreferences();
+  const { volume, setVolume, theme, setTheme, cycleTheme } = usePreferences();
   /** What an unmute should restore — the slider remembers, not the mute. */
   const lastAudibleVolumeRef = useRef(volume > 0 ? volume : FALLBACK_VOLUME);
   const healthById = useStationHealth();
@@ -243,32 +247,43 @@ function Home() {
   useEffect(() => {
     const aborter = new AbortController();
     const requestId = ++latestRequest.current;
-    setStatus(submittedQuery ? 'loading' : 'idle');
-    if (!submittedQuery) {
-      setStations([]);
+    setStatus('loading');
+    getStations({ signal: aborter.signal })
+      .then((results) => {
+        if (aborter.signal.aborted || requestId !== latestRequest.current) return;
+        setAllStations(results);
+        setStations(results);
+        setStatus(results.length ? 'success' : 'empty');
+        setCatalogInfo(getGardenCatalogInfo());
+      })
+      .catch((error: unknown) => {
+        if (aborter.signal.aborted || requestId !== latestRequest.current) return;
+        if (allStations.length === 0) {
+          setErrorMessage('');
+          setStatus('idle');
+          return;
+        }
+        setErrorMessage(error instanceof Error ? error.message : 'The station directory could not be reached.');
+        setStatus('error');
+      });
+    return () => aborter.abort();
+  }, [attempt]);
+
+  useEffect(() => {
+    if (!submittedQuery.trim()) {
+      setStations(allStations);
       setSelectedStation(null);
       setFilters(EMPTY_FILTERS);
       setSort('relevance');
       setErrorMessage('');
+      setSearchMatchedStations([]);
+      return;
     }
-    STATION_SOURCES[sourceId]
-      .getStations({ query: submittedQuery, signal: aborter.signal })
-      .then((results) => {
-        if (aborter.signal.aborted || requestId !== latestRequest.current) return;
-        setStations(results);
-        setStatus(results.length ? 'success' : 'empty');
-        setCatalogInfo(sourceId === 'garden' ? getGardenCatalogInfo() : null);
-      })
-      .catch((error: unknown) => {
-        if (aborter.signal.aborted || requestId !== latestRequest.current) return;
-        if (submittedQuery) {
-          setErrorMessage(error instanceof Error ? error.message : 'The station directory could not be reached.');
-          setStatus('error');
-        }
-        // A cold catalog load failing silently keeps the idle search bar usable.
-      });
-    return () => aborter.abort();
-  }, [sourceId, submittedQuery, attempt]);
+    const matches = allStations.filter((station) => stationMatchesQuery(station, submittedQuery));
+    setStations(matches);
+    setSearchMatchedStations(matches);
+    setStatus(matches.length ? 'success' : 'empty');
+  }, [submittedQuery, allStations]);
 
   // Only probeable channels join the health pool: the crawled Radio Garden
   // catalog is geotagged HTTPS listen URLs with nothing to poll, so registering
@@ -296,7 +311,7 @@ function Home() {
   // Picking a facet, sorting, scanning, or switching shelves starts a fresh page of rows.
   useEffect(() => {
     setListLimit(DIRECTORY_PAGE_SIZE);
-  }, [submittedQuery, sourceId, filters, sort, shelf]);
+  }, [submittedQuery, filters, sort, shelf]);
 
   // Drawer hygiene: Escape closes it (focus returns to the toggle), the page
   // behind it is scroll-locked, and focus is contained while it is open.
@@ -391,7 +406,11 @@ function Home() {
       visibleStations.find((item) => item.id === stationId) ??
       stations.find((item) => item.id === stationId);
     if (!station) return;
+    const isChannelChange = station.id !== selectedStation?.id;
     setSelectedStation(station);
+    if (isChannelChange && options?.autoplay) {
+      cycleTheme();
+    }
     if (options?.autoplay) {
       syncStationLink(station);
       void controller.play(station);
@@ -426,7 +445,11 @@ function Home() {
     const pool = visibleStations.length > 0 ? visibleStations : usableStations;
     const station = pickRandomStation(pool, { excludeId: selectedStation?.id ?? null });
     if (!station) return;
+    const isChannelChange = station.id !== selectedStation?.id;
     setSelectedStation(station);
+    if (isChannelChange) {
+      cycleTheme();
+    }
     syncStationLink(station);
     void controller.play(station);
     // Reveal what got picked: the drawer shows the row and scrolls it into view.
@@ -496,6 +519,12 @@ function Home() {
     return stations;
   }, [shelf, stations, pinnedStations, recentStations]);
 
+  const mapBaseStations = useMemo<Station[]>(() => {
+    if (shelf === 'pinned') return [...pinnedStations];
+    if (shelf === 'recent') return [...recentStations];
+    return allStations;
+  }, [shelf, allStations, pinnedStations, recentStations]);
+
   const pinnedIds = useMemo(
     () => new Set(pinnedStations.map((station) => station.id)),
     [pinnedStations],
@@ -516,10 +545,41 @@ function Home() {
         .filter((station) => !offlineIds.has(station.id)),
     [baseStations, healthById, offlineIds],
   );
+  const usableMapStations = useMemo(
+    () =>
+      mapBaseStations
+        .filter(hasSecureStream)
+        .filter((station) => healthById.get(station.id) !== 'insecure')
+        .filter((station) => !offlineIds.has(station.id)),
+    [mapBaseStations, healthById, offlineIds],
+  );
   const visibleStations = useMemo(
     () => sortStations(filterStations(usableStations, filters), sort),
     [usableStations, filters, sort],
   );
+
+  const matchedStations = useMemo<Station[]>(
+    () => {
+      if (!submittedQuery.trim()) return [];
+      return allStations.filter((station) => stationMatchesQuery(station, submittedQuery));
+    },
+    [allStations, submittedQuery],
+  );
+  const matchedIds = useMemo(
+    () => new Set(matchedStations.map((station) => station.id)),
+    [matchedStations],
+  );
+
+  // Focus the first matched station when a search returns matches and nothing is locked yet.
+  useEffect(() => {
+    if (!submittedQuery.trim()) return;
+    if (selectedStation) return;
+    if (matchedStations.length === 0) return;
+    const first = matchedStations[0] as unknown as Station;
+    if (first) {
+      setSelectedStation(first as Station);
+    }
+  }, [submittedQuery, matchedStations, selectedStation]);
 
   // Keep the list in sync with the map: when a station is locked, page its row
   // into the rendered slice and bring it into view while the drawer is open.
@@ -561,7 +621,11 @@ function Home() {
         : (currentIndex + direction + hopPool.length) % hopPool.length;
     const next = hopPool[nextIndex];
     if (!next) return;
+    const isChannelChange = next.id !== selectedStation?.id;
     setSelectedStation(next);
+    if (isChannelChange) {
+      cycleTheme();
+    }
     syncStationLink(next);
     void controller.play(next);
   }
@@ -588,9 +652,8 @@ function Home() {
     else void controller.play(selectedStation);
   }
 
-  const source = STATION_SOURCES[sourceId];
-  const listingTitle = submittedQuery === '' ? source.browseTitle : `Signals for “${submittedQuery}”`;
-  const placeholderTitle = source.placeholderTitle;
+  const listingTitle = submittedQuery === '' ? 'Signals from every catalog' : `Signals for “${submittedQuery}”`;
+  const placeholderTitle = 'Browse the airwaves';
 
   /** A shelf renders from stored snapshots, so it never waits on `status`. */
   const listReady = showingShelf || status === 'success';
@@ -653,19 +716,24 @@ function Home() {
       />
 
       <div className="atlas-canvas">
-        <ShaderBackdrop />
+        <ShaderBackdrop theme={theme} />
+        <BackdropArt art={getThemeDefinition(theme).art} />
 
         <ModeDock
           zen={zen}
           onToggleZen={toggleZen}
           onStartScreensaver={beginScreensaver}
+          theme={theme}
+          onSelectTheme={setTheme}
         />
 
         <AtlasWorld
-          stations={visibleStations}
+          stations={usableMapStations}
           selectedStationId={selectedStation?.id ?? null}
           healthById={healthById}
           pinnedIds={pinnedIds}
+          matchedIds={matchedIds}
+          theme={theme}
           onSelectStation={handleSelectStation}
         />
 
@@ -698,7 +766,12 @@ function Home() {
 
       <div className="atlas-footer">
         <span data-testid="source-credit">
-          Stations via <a href={source.credit.href} target="_blank" rel="noreferrer noopener">{source.credit.label}</a>
+          Stations via {CATALOG_CREDITS.map((credit, index) => (
+            <span key={credit.href}>
+              {index > 0 && ' · '}
+              <a href={credit.href} target="_blank" rel="noreferrer noopener">{credit.label}</a>
+            </span>
+          ))}
           {catalogInfo && (
             <span className="atlas-footer__catalog" data-testid="text-catalog-freshness">
               {catalogInfo.count.toLocaleString('en-US')} channels · crawled {formatCatalogStamp(catalogInfo.generatedAt)}
@@ -815,26 +888,6 @@ function Home() {
               </button>
             </div>
 
-            <div className="source-switch" role="group" aria-label="Channel source">
-              {listStationSources().map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-pressed={sourceId === item.id}
-                  className={`source-switch__option${sourceId === item.id ? ' is-active' : ''}`}
-                  onClick={() => {
-                    wantsListRef.current = true;
-                    setShelf('all');
-                    setFilters(EMPTY_FILTERS);
-                    setSort('relevance');
-                    setSourceId(item.id);
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
             {listReady && (
               <StationFilters
                 options={filterOptions}
@@ -849,8 +902,8 @@ function Home() {
             {!showingShelf && status === 'idle' && (
               <div className="state-panel" data-testid="state-search-idle">
                 <div className="state-glyph"><Signal aria-hidden="true" /></div>
-                <h3>{source.idleTitle}</h3>
-                <p>{source.idleBody}</p>
+                <h3>The dial is yours.</h3>
+                <p>Enter a station name, country, or genre above — every catalog answers as one dial.</p>
               </div>
             )}
             {!showingShelf && status === 'loading' && (

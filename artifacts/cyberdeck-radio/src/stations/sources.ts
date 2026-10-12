@@ -1,8 +1,8 @@
 /**
- * Channel catalog registry. Each source knows how to surface its listing for
- * the active query (or its quickest default when opened with no query), whether
- * its stations can be pinned on the atlas, and the copy the shell renders for
- * its browse/idle states.
+ * Unified channel directory. The crawl-backed Radio Garden catalog, the live
+ * radio-browser.info directory, and the SomaFM lineup surface as one merged
+ * station list — every radio channel belongs to a single group, with the
+ * catalogs only acknowledged in the footer credit.
  */
 
 import { fetchGardenStations, filterGardenStations } from "./radio-garden";
@@ -10,89 +10,76 @@ import { fetchTrendingStations, searchStations } from "./radio-browser";
 import { fetchSomaChannels, filterSomaChannels } from "./somafm";
 import type Station from "./types";
 
-export type StationSourceId = "airwaves" | "soma" | "garden";
-
-export type StationSource = {
-  id: StationSourceId;
-  label: string;
-  hint: string;
-  placeholder: string;
-  meta: string;
-  /** Attribute in the app footer for the catalog this source surfaces. */
+export type StationSourceMeta = {
+  /** Attribute in the app footer for the catalog this source supplies. */
   credit: { label: string; href: string };
-  /** Whether the catalog provides coordinates that can pin the world atlas. */
-  global: boolean;
-  /** Directory heading once results are in and the query is empty. */
-  browseTitle: string;
-  /** Directory heading while idle/loading/empty. */
-  placeholderTitle: string;
-  /** Idle empty-state headline. */
-  idleTitle: string;
-  /** Idle empty-state body. */
-  idleBody: string;
-  getStations(input: {
-    query?: string;
-    signal?: AbortSignal;
-  }): Promise<Station[]>;
 };
 
-export const STATION_SOURCES: Record<StationSourceId, StationSource> = {
-  airwaves: {
-    id: "airwaves",
-    label: "AIRWAVES",
-    hint: "Search by station name, country, or genre",
-    placeholder: "Station name, country, or genre",
-    meta: "OPEN API · GEOTAGGED",
-    credit: { label: "RADIO-BROWSER.INFO", href: "https://www.radio-browser.info/" },
-    global: true,
-    browseTitle: "Live signals worldwide",
-    placeholderTitle: "Find your frequency",
-    idleTitle: "The dial is yours.",
-    idleBody:
-      "Enter a station name, country, or genre above to find the real broadcasts reaching out from there.",
-    getStations: async ({ query, signal }) =>
-      query && query.trim()
-        ? searchStations({ query, signal })
-        : fetchTrendingStations({ signal }),
-  },
-  soma: {
-    id: "soma",
-    label: "SOMA FM",
-    hint: "Search the SomaFM channel lineup",
-    placeholder: "SomaFM channel or vibe",
-    meta: "CURATED CHANNELS · INTERNET ONLY",
-    credit: { label: "SOMAFM.COM", href: "https://somafm.com/" },
-    global: false,
-    browseTitle: "The SomaFM lineup",
-    placeholderTitle: "Browse the lineup",
-    idleTitle: "Tuning the lineup.",
-    idleBody:
-      "SomaFM's channel catalog is on its way. Search a channel, style, or vibe to scan it.",
-    getStations: async ({ query, signal }) => {
-      const channels = await fetchSomaChannels({ signal });
-      return filterSomaChannels(channels, query ?? "");
-    },
-  },
-  garden: {
-    id: "garden",
-    label: "RADIO GARDEN",
-    hint: "Search the scraped world directory",
-    placeholder: "Station name or country",
-    meta: "CRAWLED CATALOG · GEOTAGGED",
-    credit: { label: "RADIO.GARDEN", href: "https://radio.garden/" },
-    global: true,
-    browseTitle: "Signals from Radio Garden",
-    placeholderTitle: "Scan the garden",
-    idleTitle: "The garden is listening.",
-    idleBody:
-      "Radio Garden's world directory is refreshed by a scheduled crawl. Search a station or country to scan it.",
-    getStations: async ({ query, signal }) => {
-      const stations = await fetchGardenStations({ signal });
-      return filterGardenStations(stations, query ?? "");
-    },
-  },
+export const CATALOG_CREDITS: StationSourceMeta["credit"][] = [
+  { label: "RADIO.GARDEN", href: "https://radio.garden/" },
+  { label: "RADIO-BROWSER.INFO", href: "https://www.radio-browser.info/" },
+  { label: "SOMAFM.COM", href: "https://somafm.com/" },
+];
+
+export type GetStationsInput = {
+  query?: string;
+  signal?: AbortSignal;
 };
 
-export function listStationSources(): StationSource[] {
-  return [STATION_SOURCES.airwaves, STATION_SOURCES.soma, STATION_SOURCES.garden];
+/**
+ * Surface every catalog as a single group. A query is answered by all three
+ * catalogs at once (live search for radio-browser, client-side matching for the
+ * baked catalogs); the empty-query default merges each catalog's quickest
+ * listing.
+ */
+export async function getStations({
+  query,
+  signal,
+}: GetStationsInput = {}): Promise<Station[]> {
+  if (query?.trim()) return getQueriedStations(query, signal);
+  return getDefaultStations(signal);
+}
+
+async function getQueriedStations(
+  query: string,
+  signal?: AbortSignal,
+): Promise<Station[]> {
+  const [garden, soma, live] = await Promise.all([
+    filterGardenStations(await fetchGardenStations({ signal }), query),
+    filterSomaChannels(await fetchSomaChannels({ signal }), query),
+    searchStations({ query, signal }),
+  ]);
+  return mergeStations([garden, soma, live]);
+}
+
+async function getDefaultStations(signal?: AbortSignal): Promise<Station[]> {
+  const [garden, soma, trending] = await Promise.all([
+    fetchGardenStations({ signal }),
+    fetchSomaChannels({ signal }),
+    fetchTrendingStations({ signal }),
+  ]);
+  return mergeStations([garden, soma, trending]);
+}
+
+/**
+ * One station per channel: collapse repeats by id, and by identical listen URL
+ * for records that cross catalogs under different ids (the baked Radio Garden
+ * crawl and the live radio-browser.info directory often know the same channel).
+ * Garden lands first so its geotagged records win the de-dupe.
+ */
+function mergeStations(groups: Station[][]): Station[] {
+  const merged: Station[] = [];
+  const seenIds = new Set<string>();
+  const seenUrls = new Set<string>();
+
+  for (const station of groups.flat()) {
+    if (seenIds.has(station.id)) continue;
+    const url = station.streams[0]?.url;
+    if (url && seenUrls.has(url)) continue;
+    seenIds.add(station.id);
+    if (url) seenUrls.add(url);
+    merged.push(station);
+  }
+
+  return merged;
 }

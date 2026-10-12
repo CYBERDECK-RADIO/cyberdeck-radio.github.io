@@ -9,6 +9,7 @@ import {
   type Preferences,
   type VisualizerStyle,
 } from "./preferences";
+import { applyThemeToDocument, isThemeId, nextThemeId, type ThemeId } from "./themes";
 
 function readPreferences(): Preferences {
   if (typeof window === "undefined") {
@@ -26,11 +27,24 @@ export function usePreferences(): {
   preferences: Preferences;
   volume: number;
   visualizerStyle: VisualizerStyle;
+  theme: ThemeId;
   setVolume: (value: number) => void;
   setVisualizerStyle: (style: VisualizerStyle) => void;
   cycleVisualizerStyle: () => void;
+  setTheme: (theme: ThemeId) => void;
+  cycleTheme: () => void;
 } {
-  const [preferences, setPreferences] = useState<Preferences>(readPreferences);
+  const [preferences, setPreferences] = useState<Preferences>(() => {
+    const initial = readPreferences();
+    // Paint the saved theme before the first render (including the shader
+    // backdrop's first palette read) so a reload never flashes the default.
+    applyThemeToDocument(initial.theme);
+    return initial;
+  });
+
+  useEffect(() => {
+    applyThemeToDocument(preferences.theme);
+  }, [preferences.theme]);
 
   useEffect(() => {
     try {
@@ -44,6 +58,7 @@ export function usePreferences(): {
     preferences,
     volume: preferences.volume,
     visualizerStyle: preferences.visualizerStyle,
+    theme: preferences.theme,
     setVolume: (value) =>
       setPreferences((current) => ({ ...current, volume: clampVolume(value) })),
     setVisualizerStyle: (style) =>
@@ -53,5 +68,19 @@ export function usePreferences(): {
         ...current,
         visualizerStyle: nextVisualizerStyle(current.visualizerStyle),
       })),
+    setTheme: (theme) =>
+      setPreferences((current) => {
+        if (!isThemeId(theme) || theme === current.theme) return current;
+        // Apply the token block synchronously so the re-render — and the GPU
+        // backdrop that reads computed styles — sees the new palette at once.
+        applyThemeToDocument(theme);
+        return { ...current, theme };
+      }),
+    cycleTheme: () =>
+      setPreferences((current) => {
+        const next = nextThemeId(current.theme);
+        applyThemeToDocument(next);
+        return { ...current, theme: next };
+      }),
   };
 }

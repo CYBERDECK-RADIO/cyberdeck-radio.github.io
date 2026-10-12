@@ -36,6 +36,8 @@ import type { HealthStatus } from '../../stations/stream-health-logic';
 import { findNearestStation } from '../../map/nearest-station';
 import { worldCountries } from '../../map/world-data';
 import ClusterPicker from './ClusterPicker';
+import PipShape from './theme/PipShape';
+import { DEFAULT_THEME_ID, getThemeDefinition, type ThemeId } from '@/preferences/themes';
 import {
   MAP_HEIGHT,
   MAP_WIDTH,
@@ -57,6 +59,10 @@ type AtlasWorldProps = {
   healthById?: ReadonlyMap<string, HealthStatus>;
   /** Pinned channels, drawn with a kept-channel ring among the pips. */
   pinnedIds?: ReadonlySet<string>;
+  /** Matched channels during active search. */
+  matchedIds?: ReadonlySet<string>;
+  /** The active skin: decides the station-pin glyph. */
+  theme?: ThemeId;
   /** A pip interaction locks and plays; a pan-settle only locks. */
   onSelectStation: (stationId: string, options?: { autoplay?: boolean }) => void;
 };
@@ -219,6 +225,8 @@ export default function AtlasWorld({
   selectedStationId,
   healthById = EMPTY_HEALTH,
   pinnedIds = EMPTY_PINNED,
+  matchedIds = EMPTY_PINNED,
+  theme = DEFAULT_THEME_ID,
   onSelectStation,
 }: AtlasWorldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -247,6 +255,7 @@ export default function AtlasWorld({
     [mappedStations, view, selectedStationId],
   );
   const markerScale = fit > 0 ? 1 / fit : 1;
+  const pipShape = getThemeDefinition(theme).pip;
 
   stationsRef.current = stations;
   selectedIdRef.current = selectedStationId;
@@ -708,11 +717,12 @@ export default function AtlasWorld({
             const station = marker.station;
             const isSelected = station.id === selectedStationId;
             const isPinned = pinnedIds.has(station.id);
+            const isMatched = matchedIds.has(station.id);
             const health = healthById.get(station.id) ?? 'unknown';
             return (
               <g
                 key={marker.key}
-                className={`atlas-world__pip health-${health}${isSelected ? ' is-selected' : ''}${isPinned ? ' is-pinned' : ''}`}
+                className={`atlas-world__pip health-${health}${isSelected ? ' is-selected' : ''}${isPinned ? ' is-pinned' : ''}${isMatched ? ' is-matched' : ''}`}
                 transform={groupTransform}
                 role="button"
                 tabIndex={0}
@@ -732,8 +742,7 @@ export default function AtlasWorld({
                 }}
               >
                 <circle className="atlas-world__ping" r={13} />
-                <circle className="atlas-world__halo" r={9} />
-                <circle className="atlas-world__dot" r={3.2} />
+                <PipShape shape={pipShape} />
                 <title>{station.name}</title>
               </g>
             );

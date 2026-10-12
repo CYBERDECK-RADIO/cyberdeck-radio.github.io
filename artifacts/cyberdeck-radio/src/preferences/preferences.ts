@@ -2,17 +2,20 @@
  * Lightweight, persisted user preferences.
  *
  *   defaults ──▶ parsePreferences(stored) ──▶ Preferences (+clamping)
- *   volume / visualizerStyle ──▶ localStorage (one small JSON blob)
+ *   volume / visualizerStyle / theme ──▶ localStorage (one small JSON blob)
  *
  * Only small, local values live here — no account, no server. Parsing is total:
  * any malformed or missing input falls back to the defaults rather than throwing.
  */
+
+import { DEFAULT_THEME_ID, isThemeId, type ThemeId } from "./themes";
 
 export type VisualizerStyle = "spectrum" | "vu";
 
 export type Preferences = {
   volume: number;
   visualizerStyle: VisualizerStyle;
+  theme: ThemeId;
 };
 
 export const PREFERENCES_STORAGE_KEY = "cyberdeck-radio:preferences";
@@ -20,6 +23,7 @@ export const PREFERENCES_STORAGE_KEY = "cyberdeck-radio:preferences";
 export const DEFAULT_PREFERENCES: Preferences = {
   volume: 0.8,
   visualizerStyle: "spectrum",
+  theme: DEFAULT_THEME_ID,
 };
 
 export function clampVolume(value: unknown): number {
@@ -51,5 +55,6 @@ export function parsePreferences(raw: unknown): Preferences {
     visualizerStyle: isVisualizerStyle(candidate.visualizerStyle)
       ? candidate.visualizerStyle
       : DEFAULT_PREFERENCES.visualizerStyle,
+    theme: isThemeId(candidate.theme) ? candidate.theme : DEFAULT_PREFERENCES.theme,
   };
 }

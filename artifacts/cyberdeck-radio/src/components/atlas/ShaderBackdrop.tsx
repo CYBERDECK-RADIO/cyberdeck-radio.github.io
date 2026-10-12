@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MeshGradient } from "@paper-design/shaders-react";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { getThemeDefinition, type ShaderProfile, type ThemeId } from "@/preferences/themes";
 
 /** Backdrop opacity while the atlas is awake, in zen, and while dimmed. */
 export const BACKDROP_OPACITY = 0.5;
@@ -91,13 +92,24 @@ function SilentFallback() {
   return null;
 }
 
-export default function ShaderBackdrop() {
+/** The amber default's temperament, used before a theme id is supplied. */
+const DEFAULT_SHADER: ShaderProfile = {
+  distortion: 0.75,
+  swirl: 0.35,
+  speed: 0.15,
+  grain: 0.06,
+};
+
+export default function ShaderBackdrop({ theme }: { theme?: ThemeId }) {
   const reducedMotion = usePrefersReducedMotion();
   const webgl2 = useMemo(() => supportsWebGL2(), []);
+  // `theme` is only a change signal: when the active token block swaps, the
+  // memo re-reads the CSS custom properties so the GPU sky re-themes too.
   const colors = useMemo(
     () => (webgl2 ? buildBackdropPalette() : []),
-    [webgl2],
+    [webgl2, theme],
   );
+  const shader = theme ? getThemeDefinition(theme).shader : DEFAULT_SHADER;
 
   if (!webgl2) return null;
 
@@ -111,10 +123,10 @@ export default function ShaderBackdrop() {
       <ErrorBoundary FallbackComponent={SilentFallback}>
         <MeshGradient
           colors={colors}
-          distortion={0.75}
-          swirl={0.35}
-          grainOverlay={0.06}
-          speed={reducedMotion ? 0 : 0.15}
+          distortion={shader.distortion}
+          swirl={shader.swirl}
+          grainOverlay={shader.grain}
+          speed={reducedMotion ? 0 : shader.speed}
           fit="cover"
           width="100%"
           height="100%"

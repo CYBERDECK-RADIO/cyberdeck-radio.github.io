@@ -27,17 +27,397 @@
   --accent-strong: #e6b06a;
   --accent-soft: rgba(212, 152, 79, 0.15);
   --accent-glow: rgba(212, 152, 79, 0.35);
+  /* Readable foreground for text sitting on a solid --accent fill. */
+  --accent-contrast: #14100a;
 
   --live: #d4984f;
   --offline: #f15e6c;
   --checking: #e6c36a;
   --unknown: #7e8697;
+  --info: #4fc3f7;
+
+  /* Opaque panel + dimming scrim, themed so light skins stay legible. */
+  --bg-panel: #100d09;
+  --overlay: rgba(5, 6, 9, 0.55);
 
   --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.55);
   --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.45);
 
   font-family: var(--font-sans);
   font-synthesis: none;
+}
+
+/* ═════════════════════ Runtime themes ═════════════════════
+   The default (Atlas) lives in :root above; every other skin only
+   overrides the tokens it changes. Tokens are the single switchboard for
+   the DOM, the SVG world, and the WebGL backdrop alike. */
+/* ── Elements ── */
+[data-theme='water'] {
+  color-scheme: dark;
+  --bg: #04121c;
+  --bg-subtle: #071c2b;
+  --card: #0a2434;
+  --card-strong: #0d2c40;
+  --line: #123a50;
+  --line-soft: #16455f;
+  --text: #dff0f8;
+  --muted: #7fa8bc;
+  --faint: #5b8296;
+  --accent: #46c1e8;
+  --accent-strong: #74d6f2;
+  --accent-soft: rgba(70, 193, 232, 0.14);
+  --accent-glow: rgba(70, 193, 232, 0.35);
+  --accent-contrast: #03131c;
+  --live: #46c1e8;
+  --offline: #f15e6c;
+  --checking: #e6c36a;
+  --unknown: #7fa8bc;
+  --bg-panel: #061824;
+  --overlay: rgba(2, 10, 16, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='air'] {
+  color-scheme: light;
+  --bg: #eef3f8;
+  --bg-subtle: #e2eaf3;
+  --card: #ffffff;
+  --card-strong: #f7fafd;
+  --line: #cbd8e6;
+  --line-soft: #d8e3ee;
+  --text: #172433;
+  --muted: #5b6b80;
+  --faint: #8394a8;
+  --accent: #2f7fd1;
+  --accent-strong: #1f68b4;
+  --accent-soft: rgba(47, 127, 209, 0.12);
+  --accent-glow: rgba(47, 127, 209, 0.28);
+  --accent-contrast: #f5faff;
+  --live: #2f7fd1;
+  --offline: #cf3a4b;
+  --checking: #b07b12;
+  --unknown: #8394a8;
+  --bg-panel: #f2f7fb;
+  --overlay: rgba(30, 45, 60, 0.32);
+  --shadow-card: 0 20px 50px rgba(30, 50, 80, 0.16);
+  --shadow-float: 0 10px 32px rgba(30, 50, 80, 0.12);
+}
+
+[data-theme='fire'] {
+  color-scheme: dark;
+  --bg: #140a06;
+  --bg-subtle: #1d0f0a;
+  --card: #241410;
+  --card-strong: #2b1913;
+  --line: #3d2419;
+  --line-soft: #4a2c1f;
+  --text: #f6e9dd;
+  --muted: #b08a76;
+  --faint: #7d5c4b;
+  --accent: #ff6a2b;
+  --accent-strong: #ff9257;
+  --accent-soft: rgba(255, 106, 43, 0.16);
+  --accent-glow: rgba(255, 106, 43, 0.42);
+  --accent-contrast: #1c0a03;
+  --live: #ff6a2b;
+  --offline: #ff5470;
+  --checking: #ffd166;
+  --unknown: #b08a76;
+  --bg-panel: #170b06;
+  --overlay: rgba(12, 5, 2, 0.62);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='earth'] {
+  color-scheme: dark;
+  --bg: #0e120c;
+  --bg-subtle: #151b12;
+  --card: #1a2116;
+  --card-strong: #20291b;
+  --line: #2c3a24;
+  --line-soft: #35462b;
+  --text: #e8efe0;
+  --muted: #93a785;
+  --faint: #6b7d5f;
+  --accent: #7fae5a;
+  --accent-strong: #a0cc7a;
+  --accent-soft: rgba(127, 174, 90, 0.15);
+  --accent-glow: rgba(127, 174, 90, 0.34);
+  --accent-contrast: #0b1207;
+  --live: #7fae5a;
+  --offline: #e05a4f;
+  --checking: #e0b64a;
+  --unknown: #93a785;
+  --bg-panel: #10160d;
+  --overlay: rgba(6, 9, 4, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Cartoon ── */
+[data-theme='bubblegum'] {
+  color-scheme: light;
+  --bg: #fff0f7;
+  --bg-subtle: #ffe3f0;
+  --card: #ffffff;
+  --card-strong: #fff7fb;
+  --line: #f7b8d6;
+  --line-soft: #fbd0e4;
+  --text: #4a1136;
+  --muted: #a85c86;
+  --faint: #c98cab;
+  --accent: #ff4fa3;
+  --accent-strong: #e0328a;
+  --accent-soft: rgba(255, 79, 163, 0.14);
+  --accent-glow: rgba(255, 79, 163, 0.3);
+  --accent-contrast: #fff0f7;
+  --live: #ff4fa3;
+  --offline: #e0455c;
+  --checking: #c98a12;
+  --unknown: #c98cab;
+  --bg-panel: #fff0f7;
+  --overlay: rgba(90, 20, 60, 0.28);
+  --shadow-card: 0 18px 44px rgba(200, 60, 130, 0.22);
+  --shadow-float: 0 10px 28px rgba(200, 60, 130, 0.18);
+}
+
+[data-theme='comic'] {
+  color-scheme: light;
+  --bg: #fdf7e6;
+  --bg-subtle: #f7eed2;
+  --card: #ffffff;
+  --card-strong: #fffdf5;
+  --line: #d9cfa8;
+  --line-soft: #e6ddbf;
+  --text: #1b1b1b;
+  --muted: #6b6350;
+  --faint: #93896e;
+  --accent: #e63946;
+  --accent-strong: #c1121f;
+  --accent-soft: rgba(230, 57, 70, 0.14);
+  --accent-glow: rgba(230, 57, 70, 0.3);
+  --accent-contrast: #fff7e6;
+  --live: #e63946;
+  --offline: #b5179e;
+  --checking: #f4a100;
+  --unknown: #93896e;
+  --bg-panel: #fbf3dd;
+  --overlay: rgba(40, 30, 10, 0.3);
+  --shadow-card: 0 18px 40px rgba(60, 40, 10, 0.2);
+  --shadow-float: 0 10px 26px rgba(60, 40, 10, 0.16);
+}
+
+/* ── Japan ── */
+[data-theme='sakura'] {
+  color-scheme: dark;
+  --bg: #140d18;
+  --bg-subtle: #1e1322;
+  --card: #261831;
+  --card-strong: #2e1d3b;
+  --line: #3f2a4f;
+  --line-soft: #4c345e;
+  --text: #f7e9f2;
+  --muted: #b292ab;
+  --faint: #856a80;
+  --accent: #f7a8c8;
+  --accent-strong: #ffbcd6;
+  --accent-soft: rgba(247, 168, 200, 0.15);
+  --accent-glow: rgba(247, 168, 200, 0.35);
+  --accent-contrast: #1c0b16;
+  --live: #f7a8c8;
+  --offline: #e05a6f;
+  --checking: #e6c36a;
+  --unknown: #b292ab;
+  --bg-panel: #170f1b;
+  --overlay: rgba(10, 5, 12, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='matsuri'] {
+  color-scheme: dark;
+  --bg: #1a0a0b;
+  --bg-subtle: #241011;
+  --card: #2e1516;
+  --card-strong: #371a1b;
+  --line: #4d2426;
+  --line-soft: #5c2d2f;
+  --text: #fbeceb;
+  --muted: #c08a86;
+  --faint: #8f5f5c;
+  --accent: #ff5a5f;
+  --accent-strong: #ff8085;
+  --accent-soft: rgba(255, 90, 95, 0.16);
+  --accent-glow: rgba(255, 90, 95, 0.4);
+  --accent-contrast: #1c0809;
+  --live: #ff5a5f;
+  --offline: #ff5470;
+  --checking: #ffd166;
+  --unknown: #c08a86;
+  --bg-panel: #1c0b0c;
+  --overlay: rgba(12, 5, 5, 0.62);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ── China ── */
+[data-theme='lantern'] {
+  color-scheme: dark;
+  --bg: #160808;
+  --bg-subtle: #210d0d;
+  --card: #2a1010;
+  --card-strong: #331414;
+  --line: #4a1e1e;
+  --line-soft: #582626;
+  --text: #fbe9e0;
+  --muted: #c08a80;
+  --faint: #8f5f57;
+  --accent: #f0453f;
+  --accent-strong: #ffb84d;
+  --accent-soft: rgba(240, 69, 63, 0.15);
+  --accent-glow: rgba(240, 69, 63, 0.4);
+  --accent-contrast: #1d0806;
+  --live: #f0453f;
+  --offline: #ff5470;
+  --checking: #ffb84d;
+  --unknown: #c08a80;
+  --bg-panel: #180909;
+  --overlay: rgba(10, 4, 4, 0.62);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='jade'] {
+  color-scheme: dark;
+  --bg: #06130f;
+  --bg-subtle: #0a1d17;
+  --card: #0e2620;
+  --card-strong: #12302a;
+  --line: #1c4239;
+  --line-soft: #245247;
+  --text: #e2f4ee;
+  --muted: #7fae9f;
+  --faint: #5b8578;
+  --accent: #3fbf9f;
+  --accent-strong: #6fdcc0;
+  --accent-soft: rgba(63, 191, 159, 0.15);
+  --accent-glow: rgba(63, 191, 159, 0.34);
+  --accent-contrast: #041410;
+  --live: #3fbf9f;
+  --offline: #e05a6f;
+  --checking: #e6c36a;
+  --unknown: #7fae9f;
+  --bg-panel: #081a14;
+  --overlay: rgba(3, 12, 9, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ── India ── */
+[data-theme='rajasthan'] {
+  color-scheme: dark;
+  --bg: #180a12;
+  --bg-subtle: #230f1a;
+  --card: #2c1222;
+  --card-strong: #35162a;
+  --line: #4c2139;
+  --line-soft: #5a2844;
+  --text: #fbeaf2;
+  --muted: #c08aa8;
+  --faint: #8f5f7c;
+  --accent: #ff5fa2;
+  --accent-strong: #ffd27a;
+  --accent-soft: rgba(255, 95, 162, 0.15);
+  --accent-glow: rgba(255, 95, 162, 0.38);
+  --accent-contrast: #1d0713;
+  --live: #ff5fa2;
+  --offline: #ff5470;
+  --checking: #ffd27a;
+  --unknown: #c08aa8;
+  --bg-panel: #1a0b13;
+  --overlay: rgba(12, 4, 9, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='kerala'] {
+  color-scheme: dark;
+  --bg: #07130d;
+  --bg-subtle: #0b1e14;
+  --card: #0f281b;
+  --card-strong: #143122;
+  --line: #1f4531;
+  --line-soft: #27563d;
+  --text: #e3f5e9;
+  --muted: #7fae90;
+  --faint: #5b8568;
+  --accent: #4fbf7a;
+  --accent-strong: #f2c14e;
+  --accent-soft: rgba(79, 191, 122, 0.15);
+  --accent-glow: rgba(79, 191, 122, 0.34);
+  --accent-contrast: #04140a;
+  --live: #4fbf7a;
+  --offline: #e05a6f;
+  --checking: #f2c14e;
+  --unknown: #7fae90;
+  --bg-panel: #081a11;
+  --overlay: rgba(3, 12, 8, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='punjab'] {
+  color-scheme: dark;
+  --bg: #120e1e;
+  --bg-subtle: #1a1430;
+  --card: #221a3e;
+  --card-strong: #2a204b;
+  --line: #382c5c;
+  --line-soft: #453a6e;
+  --text: #f3e9ff;
+  --muted: #a493c8;
+  --faint: #7a6c9e;
+  --accent: #ff8a3d;
+  --accent-strong: #ffd23f;
+  --accent-soft: rgba(255, 138, 61, 0.15);
+  --accent-glow: rgba(255, 138, 61, 0.36);
+  --accent-contrast: #1a0e04;
+  --live: #ff8a3d;
+  --offline: #ff5470;
+  --checking: #ffd23f;
+  --unknown: #a493c8;
+  --bg-panel: #150f24;
+  --overlay: rgba(8, 5, 14, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='tamil'] {
+  color-scheme: dark;
+  --bg: #0a1414;
+  --bg-subtle: #0f1f1e;
+  --card: #142726;
+  --card-strong: #19302e;
+  --line: #234340;
+  --line-soft: #2c524e;
+  --text: #e4f2f0;
+  --muted: #83a8a3;
+  --faint: #5d7f7b;
+  --accent: #ff6b3d;
+  --accent-strong: #ffd166;
+  --accent-soft: rgba(255, 107, 61, 0.15);
+  --accent-glow: rgba(255, 107, 61, 0.36);
+  --accent-contrast: #170703;
+  --live: #ff6b3d;
+  --offline: #ff5470;
+  --checking: #ffd166;
+  --unknown: #83a8a3;
+  --bg-panel: #0c1918;
+  --overlay: rgba(4, 10, 10, 0.6);
+  --shadow-card: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 * { box-sizing: border-box; }
@@ -363,6 +743,82 @@ a { color: var(--accent); }
   background-size: 56px 56px;
 }
 
+/* Per-theme canvas base. Each skin lays its own ambient texture beneath the
+   decorative SVG layer; the dotted grid stays the fallback for `signal`. */
+[data-theme='water'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: repeating-radial-gradient(circle at 22% 26%, transparent 0 30px, color-mix(in srgb, var(--accent) 11%, transparent) 30px 31px),
+    repeating-radial-gradient(circle at 78% 74%, transparent 0 42px, color-mix(in srgb, var(--accent) 8%, transparent) 42px 43px);
+}
+[data-theme='air'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(115deg, transparent 0 30px, color-mix(in srgb, var(--accent) 12%, transparent) 30px 31px);
+}
+[data-theme='fire'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: radial-gradient(130% 90% at 50% 120%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 62%),
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: auto, 48px 48px;
+}
+[data-theme='earth'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: repeating-radial-gradient(circle at 30% 40%, transparent 0 22px, color-mix(in srgb, var(--accent) 9%, transparent) 22px 23px),
+    repeating-radial-gradient(circle at 72% 76%, transparent 0 36px, color-mix(in srgb, var(--accent) 7%, transparent) 36px 37px);
+}
+[data-theme='bubblegum'] .atlas-canvas,
+[data-theme='comic'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: none;
+}
+[data-theme='sakura'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%);
+}
+[data-theme='matsuri'] .atlas-canvas,
+[data-theme='lantern'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: radial-gradient(120% 80% at 50% 110%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 60%);
+}
+[data-theme='jade'] .atlas-canvas,
+[data-theme='kerala'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%);
+}
+[data-theme='rajasthan'] .atlas-canvas,
+[data-theme='punjab'] .atlas-canvas,
+[data-theme='tamil'] .atlas-canvas {
+  background-color: var(--bg);
+  background-image: radial-gradient(120% 100% at 50% 50%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 65%);
+}
+
+/* The decorative inline-SVG pattern layer: above the shader sky, below the
+   cartography, tinted by the accent token. Motion is per-art. */
+.motif-art {
+  position: absolute;
+  top: -4%;
+  left: -4%;
+  z-index: 0;
+  width: 108%;
+  height: 108%;
+  color: var(--accent);
+  pointer-events: none;
+  opacity: 0.5;
+}
+.motif-art--bubbles { animation: motif-drift-y 26s ease-in-out infinite; opacity: 0.55; }
+.motif-art--sakura { animation: motif-fall 30s linear infinite; opacity: 0.6; }
+.motif-art--lanterns { animation: motif-sway 9s ease-in-out infinite; opacity: 0.65; }
+.motif-art--ripples { animation: motif-ripple 22s ease-in-out infinite; opacity: 0.45; }
+.motif-art--embers { opacity: 0.7; }
+.motif-art--wind { animation: motif-drift-x 34s linear infinite; opacity: 0.4; }
+.motif-art--phulkari { animation: motif-sway 14s ease-in-out infinite; opacity: 0.4; }
+.motif-art--mandala { animation: motif-spin 90s linear infinite; opacity: 0.4; }
+.motif-art--kolam { opacity: 0.4; }
+.motif-art--seigaiha { opacity: 0.4; }
+.motif-art--halftone { opacity: 0.35; }
+.motif-art--contours { opacity: 0.4; }
+
+.motif-ember { animation: motif-rise 5s ease-in infinite; }
+
 /* WebGL mesh-gradient sky (Paper Shaders), themed from the CSS tokens.
    Sits under the SVG world; the dotted grid above reads through it. */
 .atlas-canvas__backdrop {
@@ -392,22 +848,50 @@ a { color: var(--accent); }
   vector-effect: non-scaling-stroke;
 }
 
-.atlas-world__pip { cursor: pointer; }
-.atlas-world__dot { fill: var(--muted); transition: fill 0.15s ease; }
-.atlas-world__halo { fill: transparent; }
-.atlas-world__ping { fill: none; stroke: var(--accent); stroke-width: 0.8; opacity: 0; }
-.atlas-world__pip:hover .atlas-world__dot,
-.atlas-world__pip:focus-visible .atlas-world__dot { fill: var(--accent); }
-.atlas-world__pip.health-offline .atlas-world__dot { fill: var(--offline); }
-.atlas-world__pip.health-checking .atlas-world__dot { fill: var(--checking); }
-.atlas-world__pip.is-selected .atlas-world__dot { fill: var(--accent); }
-.atlas-world__pip.is-pinned .atlas-world__dot { stroke: var(--accent); stroke-width: 2px; }
+.atlas-world__pip { cursor: pointer; color: var(--muted); transition: color 0.15s ease; }
+/* Shapes paint from `currentColor`, so one color rule on the pip re-colours
+   every glyph regardless of its paths. */
+.atlas-world__glyph { fill: currentColor; stroke: none; transition: fill 0.15s ease; }
+.atlas-world__glyph-line { fill: none; stroke: currentColor; }
+.atlas-world__glyph--shine { fill: color-mix(in srgb, #ffffff 55%, currentColor); }
+.atlas-world__glyph--core { fill: color-mix(in srgb, currentColor 40%, var(--bg)); }
+.atlas-world__pip:hover, .atlas-world__pip:focus-visible { color: var(--accent); }
+.atlas-world__pip.health-offline { color: var(--offline); }
+.atlas-world__pip.health-checking { color: var(--checking); }
+.atlas-world__pip.is-selected { color: var(--accent); }
+.atlas-world__pip.is-pinned .atlas-world__glyph { stroke: var(--accent); stroke-width: 2px; }
+.atlas-world__pip.is-pinned .atlas-world__glyph-line { stroke-width: 2.4px; }
+.atlas-world__pip.is-matched { color: var(--info); }
+.atlas-world__pip.is-matched .atlas-world__glyph { stroke: var(--info); stroke-width: 1.5px; }
+.atlas-world__ping { fill: none; stroke: currentColor; stroke-width: 0.8; opacity: 0; }
 .atlas-world__pip.is-selected .atlas-world__ping { animation: atlas-ping 1.8s ease-out infinite; }
 @keyframes atlas-ping {
   0% { transform: scale(0.5); opacity: 0.7; }
   80% { transform: scale(1); opacity: 0; }
   100% { transform: scale(1); opacity: 0; }
 }
+
+/* Ambient glyph motion: the shape itself is alive, keyed by motif. */
+.pip-shape--droplet { animation: pip-bob 2.6s ease-in-out infinite; }
+.pip-shape--blob { animation: pip-bob 3.4s ease-in-out infinite; }
+.pip-shape--ring .atlas-world__glyph--arc { animation: pip-spin 6s linear infinite; }
+.pip-shape--spark { animation: pip-flicker 1.6s ease-in-out infinite; }
+.pip-shape--lanternPip { animation: pip-sway 4.2s ease-in-out infinite; }
+.pip-shape--petal,
+.pip-shape--flower { animation: pip-spin 26s linear infinite; }
+@keyframes pip-bob { 0%, 100% { transform: translateY(-0.6px); } 50% { transform: translateY(0.6px); } }
+@keyframes pip-spin { to { transform: rotate(360deg); } }
+@keyframes pip-flicker { 0%, 100% { opacity: 1; } 45% { opacity: 0.55; } 60% { opacity: 0.95; } }
+@keyframes pip-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+/* Ambient motion for the decorative art layer. */
+@keyframes motif-drift-x { 0%, 100% { transform: translateX(-2%); } 50% { transform: translateX(2%); } }
+@keyframes motif-drift-y { 0%, 100% { transform: translateY(-6px); } 50% { transform: translateY(6px); } }
+@keyframes motif-fall { 0%, 100% { transform: translateY(-10px); } 50% { transform: translateY(10px); } }
+@keyframes motif-sway { 0%, 100% { transform: rotate(-0.6deg); } 50% { transform: rotate(0.6deg); } }
+@keyframes motif-ripple { 0%, 100% { transform: scale(1); opacity: 0.45; } 50% { transform: scale(1.06); opacity: 0.6; } }
+@keyframes motif-spin { to { transform: rotate(360deg); } }
+@keyframes motif-rise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
 
 /* ── density clusters ── */
 /* A 38k-channel crawl paints bubbles, not 38k pips: glow → ring → core → count. */
@@ -684,6 +1168,84 @@ a { color: var(--accent); }
   color: var(--accent);
 }
 
+/* ── theme switcher (the runtime skin picker) ── */
+.theme-switcher { position: relative; }
+.theme-switcher__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 258px;
+  max-height: min(72vh, 480px);
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card-strong) 96%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-card);
+}
+.theme-switcher__label,
+.theme-switcher__group {
+  padding: 6px 8px 3px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.theme-switcher__group { margin-top: 3px; }
+.theme-switcher__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  text-align: left;
+  color: var(--muted);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.theme-switcher__option:hover,
+.theme-switcher__option:focus-visible { background: var(--accent-soft); color: var(--text); }
+.theme-switcher__option.is-active {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+.theme-switcher__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.theme-switcher__chip svg { width: 20px; height: 20px; }
+.theme-switcher__option-copy { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.theme-switcher__option-label {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.theme-switcher__option-blurb {
+  overflow: hidden;
+  color: var(--faint);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.theme-switcher__trigger { max-width: 132px; }
+.theme-switcher__trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.theme-switcher__check { margin-left: auto; width: 13px; height: 13px; color: var(--accent); }
+
 /* ── dossier card ── */
 .atlas-canvas__dossier {
   position: absolute;
@@ -831,9 +1393,9 @@ a { color: var(--accent); }
 .dossier__button--primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #14100a;
+  color: var(--accent-contrast);
 }
-.dossier__button--primary:hover:not(:disabled) { background: var(--accent-strong); color: #14100a; }
+.dossier__button--primary:hover:not(:disabled) { background: var(--accent-strong); color: var(--accent-contrast); }
 .dossier__button--step { width: 30px; }
 .dossier__button--step svg { width: 14px; height: 14px; }
 .dossier__button.is-active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
@@ -846,7 +1408,7 @@ a { color: var(--accent); }
   flex-direction: column;
   min-width: 96px;
   border: 1px solid var(--line);
-  background: var(--bg-panel, #100d09);
+  background: var(--bg-panel);
   z-index: 6;
 }
 .dossier__sleep-menu button {
@@ -1217,7 +1779,7 @@ a { color: var(--accent); }
 .list-scrim {
   position: fixed;
   inset: 0;
-  background: rgba(5, 6, 9, 0.55);
+  background: var(--overlay);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -1296,28 +1858,6 @@ a { color: var(--accent); }
   letter-spacing: 0.18em;
   color: var(--accent);
 }
-
-/* ── source switch ── */
-.source-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  background: var(--bg-subtle);
-  align-self: flex-start;
-}
-.source-switch__option {
-  padding: 6px 10px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  transition: color 0.15s ease, background 0.15s ease;
-}
-.source-switch__option:hover { color: var(--text); }
-.source-switch__option.is-active { background: var(--accent-soft); color: var(--accent); }
 
 /* ── shelf switch (all / pinned / recent) ── */
 .shelf-switch {
