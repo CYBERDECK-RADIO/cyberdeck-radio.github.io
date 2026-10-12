@@ -269,14 +269,22 @@ function Home() {
     return () => aborter.abort();
   }, [attempt]);
 
+  // Clearing the scan drops the lock with the results, so the deck, the map, and
+  // the audio never disagree about what is playing. Keyed to the query alone:
+  // also keying it to the catalog would re-run it the moment a fresh load lands
+  // and wipe the atlas's first auto-lock.
+  useEffect(() => {
+    if (submittedQuery.trim()) return;
+    setSelectedStation(null);
+    setFilters(EMPTY_FILTERS);
+    setSort('relevance');
+    setErrorMessage('');
+    setSearchMatchedStations([]);
+  }, [submittedQuery]);
+
   useEffect(() => {
     if (!submittedQuery.trim()) {
       setStations(allStations);
-      setSelectedStation(null);
-      setFilters(EMPTY_FILTERS);
-      setSort('relevance');
-      setErrorMessage('');
-      setSearchMatchedStations([]);
       return;
     }
     const matches = allStations.filter((station) => stationMatchesQuery(station, submittedQuery));
@@ -301,12 +309,14 @@ function Home() {
 
   // The directory slides open when the visitor asked for something — a scan, a
   // source switch, a retry. A cold catalog load leaves the atlas unobstructed.
+  // Keyed to the query as well as the status: a fresh scan re-filters an
+  // already-loaded catalog, so the status can stay put while results change.
   useEffect(() => {
     if (status !== 'success' && status !== 'empty' && status !== 'error') return;
     if (!wantsListRef.current) return;
     wantsListRef.current = false;
     setListOpen(true);
-  }, [status]);
+  }, [status, submittedQuery]);
 
   // Picking a facet, sorting, scanning, or switching shelves starts a fresh page of rows.
   useEffect(() => {
